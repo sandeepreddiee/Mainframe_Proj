@@ -1,0 +1,438 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. RPTFLE.
+
+      *****************************************************
+      *      PROGRAM TO WRITE REPORT USING DB             *
+      *                                                   *
+      *****************************************************
+
+       ENVIRONMENT DIVISION.
+
+       INPUT-OUTPUT SECTION.
+
+       FILE-CONTROL.
+
+           SELECT RPT-FILE ASSIGN TO RPTFILE
+           FILE STATUS IS WS-FS1.
+
+       DATA DIVISION.
+       FILE SECTION.
+
+       FD RPT-FILE
+           RECORDING MODE IS F
+           RECORD CONTAINS 80 CHARACTERS
+           BLOCK CONTAINS 800 CHARACTERS.
+       01  RPT-REC.
+           10 FD-STUDENT-NO                     PIC X(5).
+           10 FILLER                            PIC X(15).
+           10 FD-STUDENT-NAME                   PIC X(25).
+           10 FILLER                            PIC X(5).
+           10 FD-STUDENT-TOTAL-MARKS            PIC 9(4).
+           10 FILLER                            PIC X(26).
+
+       01  RPT-REC-H1                           PIC X(80).
+       01  RPT-REC-H2                           PIC X(80).
+       01  RPT-REC-H3                           PIC X(80).
+       01  RPT-REC-H4                           PIC X(80).
+
+       01 RPT-REC-I1.
+          10 O1-FIELD1                PIC X(20).
+          10 O1-FIELD2                PIC X(12).
+          10 O1-FILLER                PIC X(48).
+
+       01 RPT-REC-I2.
+          10 O2-FIELD1                PIC X(20).
+          10 O2-FIELD2                PIC X(10).
+          10 O2-FILLER                PIC X(50).
+
+       01 RPT-REC-I3.
+          10 O3-FIELD1                PIC X(20).
+          10 O3-FIELD2                PIC X(11).
+          10 O3-FILLER                PIC X(49).
+
+       01 RPT-REC-I4.
+          10 O4-FIELD1                PIC X(20).
+          10 O4-FIELD2                PIC X(12).
+          10 O4-FILLER                PIC X(48).
+
+       01 RPT-REC-I5.
+          10 O5-FIELD1                PIC X(20).
+          10 O5-FIELD2                PIC X(10).
+          10 O5-FILLER                PIC X(50).
+
+       01 RPT-REC-I6.
+          10 O6-FIELD1                PIC X(20).
+          10 O6-FIELD2                PIC X(05).
+          10 O6-FILLER                PIC X(55).
+
+       01 RPT-REC-I7                  PIC X(80).
+
+       01 RPT-REC-I8                  PIC X(80).
+
+       01 RPT-REC-F1                  PIC X(80).
+       01 RPT-REC-F2                  PIC X(80).
+       01 RPT-REC-F3                  PIC X(80).
+       01 RPT-REC-F4                  PIC X(80).
+       01 RPT-REC-F5                  PIC X(80).
+       01 RPT-REC-F6                  PIC X(80).
+       01 RPT-REC-F7                  PIC X(80).
+       01 RPT-REC-F8                  PIC X(80).
+       01 RPT-REC-F9                  PIC X(80).
+       01 RPT-REC-F10                 PIC X(80).
+       01 RPT-REC-F11                 PIC X(80).
+
+       WORKING-STORAGE SECTION.
+
+           EXEC SQL
+             INCLUDE SQLCA
+           END-EXEC.
+
+           EXEC SQL
+             INCLUDE PATBDCL
+           END-EXEC.
+
+           EXEC SQL
+             INCLUDE DOCDCL
+           END-EXEC.
+
+           EXEC SQL
+             DECLARE C1 CURSOR FOR
+                        SELECT *
+                          FROM PAT_BOOKING_DETAILS
+                          FOR FETCH ONLY
+
+           END-EXEC.
+
+       01 WS-CURRENT-DATE-FIELDS.
+          05 WS-CURRENT-DATE.
+             10 WS-CURRENT-YEAR       PIC 9(4).
+             10 WS-CURRENT-MONTH      PIC 9(2).
+             10 WS-CURRENT-DAY        PIC 9(2).
+          05 WS-CURRENT-TIME.
+             10 WS-CURRENT-HOUR       PIC 9(2).
+             10 WS-CURRENT-MINUTE     PIC 9(2).
+             10 WS-CURRENT-SECOND     PIC 9(2).
+             10 WS-CURRENT-MS         PIC 9(2).
+          05 WS-DIFF-FROM-GMT         PIC S9(4).
+
+       01 WS-RPT-REC-H1.
+          10 H1-FIELD1                PIC X(17).
+          10 H1-FIELD2                PIC X(07) VALUE 'HORTIS '.
+          10 H1-FIELD3                PIC X(12) VALUE 'APPOINTMENT '.
+          10 H1-FIELD4                PIC X(12) VALUE 'CONFIRMATION'.
+          10 H1-FIELD5                PIC X(32) VALUE SPACES.
+
+       01 WS-RPT-REC-H2.
+          10 H2-FIELD1                PIC X(17).
+          10 H2-FIELD2                PIC X(07) VALUE '------ '.
+          10 H2-FIELD3                PIC X(12) VALUE '----------- '.
+          10 H2-FIELD4                PIC X(12) VALUE '------------'.
+          10 H2-FIELD5                PIC X(32) VALUE SPACES.
+
+       01 WS-RPT-REC-H3.
+          10 H3-FILLER                PIC X(54) VALUE SPACES.
+          10 H3-FIELD1                PIC X(06) VALUE 'DATE :'.
+          10 H3-FIELD2.
+             15 H3-FIELD21            PIC X(4).
+             15 H3-FIELD22            PIC X(1) VALUE '/'.
+             15 H3-FIELD23            PIC X(2).
+             15 H3-FIELD24            PIC X(1) VALUE '/'.
+             15 H3-FIELD25            PIC X(2).
+          10 H3-FILLER                PIC X(10) VALUE SPACES.
+
+       01 WS-RPT-REC-H4.
+          10 H4-FILLER                PIC X(54) VALUE SPACES.
+          10 H4-FIELD1                PIC X(06) VALUE 'TIME :'.
+          10 H4-FIELD2.
+             15 H4-FIELD21            PIC X(2).
+             15 H4-FIELD22            PIC X(1) VALUE ':'.
+             15 H4-FIELD23            PIC X(2).
+             15 H4-FIELD24            PIC X(1) VALUE ':'.
+             15 H4-FIELD25            PIC X(2).
+          10 H4-FILLER                PIC X(12) VALUE SPACES.
+
+       01 WS-RPT-REC-I1.
+          10 I1-FIELD1                PIC X(20)
+                                          VALUE 'PATIENT NAME       :'.
+          10 I1-FIELD2                PIC X(12).
+          10 I1-FILLER                PIC X(48) VALUE SPACES.
+
+       01 WS-RPT-REC-I2.
+          10 I2-FIELD1                PIC X(20)
+                                          VALUE 'PATIENT MOBILE NUM :'.
+          10 I2-FIELD2                PIC X(10).
+          10 I2-FILLER                PIC X(50) VALUE SPACES.
+
+       01 WS-RPT-REC-I3.
+          10 I3-FIELD1                PIC X(20)
+                                          VALUE 'PROBLEM            :'.
+          10 I3-FIELD2                PIC X(11).
+          10 I3-FILLER                PIC X(49) VALUE SPACES.
+
+       01 WS-RPT-REC-I4.
+          10 I4-FIELD1                PIC X(20)
+                                          VALUE 'DOCTOR ASSIGNED    :'.
+          10 I4-FIELD2                PIC X(12).
+          10 I4-FILLER                PIC X(48) VALUE SPACES.
+
+       01 WS-RPT-REC-I5.
+          10 I5-FIELD1                PIC X(20)
+                                          VALUE 'APPOINTMENT DATE   :'.
+          10 I5-FIELD2                PIC X(10).
+          10 I5-FILLER                PIC X(50) VALUE SPACES.
+
+       01 WS-RPT-REC-I6.
+          10 I6-FIELD1                PIC X(20)
+                                          VALUE 'SLOT TIMINGS       :'.
+          10 I6-FIELD2                PIC X(05).
+          10 I6-FILLER                PIC X(55) VALUE SPACES.
+
+       01 WS-RPT-REC-I7               PIC X(80) VALUE SPACES.
+
+       01 WS-RPT-REC-I8               PIC X(80) VALUE SPACES.
+
+       01 WS-RPT-REC-F1.
+          10 F1-FIELD1                PIC X(22)
+                                      VALUE 'INSTRUCTIONS TO FOLLOW'.
+          10 F1-FILLER                PIC X(58) VALUE SPACES.
+
+       01 WS-RPT-REC-F2.
+          10 F2-FIELD1                PIC X(22)
+                                      VALUE '----------------------'.
+          10 F2-FIELD2                PIC X(58) VALUE SPACES.
+
+       01 WS-RPT-REC-F3.
+          10 F3-FIELD1                PIC X(22)
+                                      VALUE '1.PLEASE DO REACH THE '.
+          10 F3-FIELD2                PIC X(25)
+                                      VALUE 'HOSPITAL 15 MINS PRIOR TO'.
+          10 F3-FIELD3                PIC X(21)
+                                      VALUE ' THE APPOINTMENT TIME'.
+          10 F3-FIELD4                PIC X(12) VALUE SPACES.
+
+       01 WS-RPT-REC-F4.
+          10 F4-FIELD1                PIC X(25)
+                                      VALUE '2.WEARING A MASK NEAR THE'.
+          10 F4-FIELD2                PIC X(22)
+                                      VALUE ' HOSPITAL PREMISES IS '.
+          10 F4-FIELD3                PIC X(09)
+                                      VALUE 'MANDATORY'.
+          10 F4-FILLER                PIC X(24) VALUE SPACES.
+
+       01 WS-RPT-REC-F5.
+          10 F5-FIELD1                PIC X(25)
+                                      VALUE '3.MAKE SURE YOU BRING THE'.
+          10 F5-FIELD2                PIC X(25)
+                                      VALUE ' COPY OF THE APPOINTMENT '.
+          10 F5-FIELD3                PIC X(25)
+                                      VALUE 'CONFIRMATION'.
+          10 F5-FILLER                PIC X(5) VALUE SPACES.
+
+       01 WS-RPT-REC-F6               PIC X(80) VALUE SPACES.
+
+       01 WS-RPT-REC-F7               PIC X(80) VALUE SPACES.
+
+       01 WS-RPT-REC-F8.
+          10 F8-FIELD1                PIC X(54) VALUE SPACES.
+          10 F8-FIELD2                PIC X(13) VALUE 'CONTACT US AT'.
+          10 F8-FILLER                PIC X(13) VALUE SPACES.
+
+       01 WS-RPT-REC-F9.
+          10 F9-FIELD1                PIC X(54) VALUE SPACES.
+          10 F9-FIELD2                PIC X(13) VALUE '------- -- --'.
+          10 F9-FILLER                PIC X(13) VALUE SPACES.
+
+       01 WS-RPT-REC-F10.
+          10 F10-FIELD1               PIC X(54) VALUE SPACES.
+          10 F10-FIELD2               PIC X(16)
+                                      VALUE 'HORTIS@SERV.COM '.
+          10 F10-FIELD3               PIC X(10) VALUE SPACES.
+
+       01 WS-RPT-REC-F11.
+          10 F11-FIELD1               PIC X(54) VALUE SPACES.
+          10 F11-FIELD2               PIC X(14) VALUE '+91 9807654321'.
+          10 F11-FIELD3               PIC X(12) VALUE SPACES.
+
+       01 WS-FS1                      PIC X(2).
+       01 WS-COUNT                    PIC 9(2).
+
+
+       PROCEDURE DIVISION.
+
+       MAIN-PARA.
+
+           PERFORM 0001-OPEN-PARA THRU 0001-EXIT.
+           PERFORM 0002-FETCH-PARA THRU 0002-EXIT UNTIL SQLCODE = 100.
+           PERFORM 0006-CLOSE-PARA THRU 0006-EXIT.
+
+           STOP RUN.
+
+       0001-OPEN-PARA.
+
+           EXEC SQL
+             OPEN C1
+           END-EXEC.
+
+           OPEN OUTPUT RPT-FILE.
+
+           IF WS-FS1 = '00' THEN
+              DISPLAY 'FILE OPEN SUCCESS'
+           ELSE
+              DISPLAY 'FILE OPEN UNSUCCESSFUL'
+              DISPLAY 'FILE STATUS CODE: ' ' ' WS-FS1
+           END-IF.
+
+       0001-EXIT.
+           EXIT.
+
+       0002-FETCH-PARA.
+
+           EXEC SQL
+             FETCH C1 INTO :DCLPAT-BOOKING-DETAILS
+           END-EXEC.
+
+           IF SQLCODE = 0 THEN
+              PERFORM 0004-WRITE-HEADER THRU 0004-EXIT
+              PERFORM 0003-PROCESS-PARA THRU 0003-EXIT
+              PERFORM 0005-FOOTER-PARA  THRU 0005-EXIT
+           END-IF.
+
+       0002-EXIT.
+           EXIT.
+
+       0003-PROCESS-PARA.
+           EXEC SQL
+               SELECT DOC_NAME,DOC_SPCLTY
+                      INTO : HV-DOC-NAME,
+                           : HV-DOC-SPCLTY
+                      FROM   DOC_DETAILS
+                WHERE DOC_ID = :HV-PATIENT-BDID
+           END-EXEC.
+
+           IF SQLCODE = 0 THEN
+              MOVE HV-DOC-NAME TO I4-FIELD2
+              MOVE HV-DOC-SPCLTY TO I3-FIELD2
+           ELSE
+              MOVE SPACES TO I4-FIELD2
+              MOVE SPACES TO I3-FIELD2
+           END-IF.
+
+           MOVE HV-PATIENT-NAME   TO I1-FIELD2.
+           MOVE I1-FIELD1         TO O1-FIELD1.
+           MOVE I1-FIELD2         TO O1-FIELD2.
+           MOVE I1-FILLER         TO O1-FILLER.
+           WRITE RPT-REC-I1.
+
+           MOVE HV-PATIENT-MOB-NO TO I2-FIELD2.
+           MOVE I2-FIELD1         TO O2-FIELD1.
+           MOVE I2-FIELD2         TO O2-FIELD2.
+           MOVE I2-FILLER         TO O2-FILLER.
+           WRITE RPT-REC-I2.
+
+           MOVE I3-FIELD1         TO O3-FIELD1.
+           MOVE I3-FIELD2         TO O3-FIELD2.
+           MOVE I3-FILLER         TO O3-FILLER.
+           WRITE RPT-REC-I3.
+
+           MOVE I4-FIELD1         TO O4-FIELD1.
+           MOVE I4-FIELD2         TO O4-FIELD2.
+           MOVE I4-FILLER         TO O4-FILLER.
+           WRITE RPT-REC-I4.
+
+           MOVE HV-PATIENT-BDATE  TO I5-FIELD2.
+           MOVE I5-FIELD1         TO O5-FIELD1.
+           MOVE I5-FIELD2         TO O5-FIELD2.
+           MOVE I5-FILLER         TO O5-FILLER.
+           WRITE RPT-REC-I5.
+
+           MOVE HV-PATIENT-BSLOT  TO I6-FIELD2.
+           MOVE I6-FIELD1         TO O6-FIELD1.
+           MOVE I6-FIELD2         TO O6-FIELD2.
+           MOVE I6-FILLER         TO O6-FILLER.
+           WRITE RPT-REC-I6.
+
+           MOVE WS-RPT-REC-I7     TO RPT-REC-I7.
+           WRITE RPT-REC-I7.
+
+           MOVE WS-RPT-REC-I8     TO RPT-REC-I8.
+           WRITE RPT-REC-I8.
+
+       0003-EXIT.
+           EXIT.
+
+       0004-WRITE-HEADER.
+           MOVE WS-RPT-REC-H1 TO RPT-REC-H1.
+           WRITE RPT-REC-H1.
+
+           MOVE WS-RPT-REC-H2 TO RPT-REC-H2.
+           WRITE RPT-REC-H2.
+
+           MOVE FUNCTION CURRENT-DATE TO WS-CURRENT-DATE-FIELDS.
+
+           MOVE WS-CURRENT-YEAR   TO H3-FIELD21.
+           MOVE WS-CURRENT-MONTH  TO H3-FIELD23.
+           MOVE WS-CURRENT-DAY    TO H3-FIELD25.
+           MOVE WS-RPT-REC-H3     TO RPT-REC-H3.
+           WRITE RPT-REC-H3.
+
+           MOVE WS-CURRENT-HOUR   TO H4-FIELD21.
+           MOVE WS-CURRENT-MINUTE TO H4-FIELD23.
+           MOVE WS-CURRENT-SECOND TO H4-FIELD25.
+           MOVE WS-RPT-REC-H4     TO RPT-REC-H4.
+           WRITE RPT-REC-H4.
+       0004-EXIT.
+           EXIT.
+
+       0005-FOOTER-PARA.
+           MOVE WS-RPT-REC-F1 TO RPT-REC-F1.
+           WRITE RPT-REC-F1.
+
+           MOVE WS-RPT-REC-F2 TO RPT-REC-F2.
+           WRITE RPT-REC-F2.
+
+           MOVE WS-RPT-REC-F3 TO RPT-REC-F3.
+           WRITE RPT-REC-F3.
+
+           MOVE WS-RPT-REC-F4 TO RPT-REC-F4.
+           WRITE RPT-REC-F4.
+
+           MOVE WS-RPT-REC-F5 TO RPT-REC-F5.
+           WRITE RPT-REC-F5.
+
+           MOVE WS-RPT-REC-F6 TO RPT-REC-F6.
+           WRITE RPT-REC-F6.
+
+           MOVE WS-RPT-REC-F7 TO RPT-REC-F7.
+           WRITE RPT-REC-F7.
+
+           MOVE WS-RPT-REC-F8 TO RPT-REC-F8.
+           WRITE RPT-REC-F8.
+
+           MOVE WS-RPT-REC-F9 TO RPT-REC-F9.
+           WRITE RPT-REC-F9.
+
+           MOVE WS-RPT-REC-F10 TO RPT-REC-F10.
+           WRITE RPT-REC-F10.
+
+           MOVE WS-RPT-REC-F11 TO RPT-REC-F11.
+           WRITE RPT-REC-F11.
+
+       0005-EXIT.
+           EXIT.
+
+       0006-CLOSE-PARA.
+           EXEC SQL
+             CLOSE C1
+           END-EXEC.
+
+           CLOSE RPT-FILE.
+
+           IF WS-FS1 = 0 THEN
+              DISPLAY 'FILE CLOSE SUCCESSFUL'
+           ELSE
+              DISPLAY 'FILE CLOSE UNSUCCESSFUL'
+           END-IF.
+
+       0006-EXIT.
+           EXIT.
+

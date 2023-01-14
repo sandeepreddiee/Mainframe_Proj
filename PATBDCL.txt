@@ -1,0 +1,27 @@
+      ******************************************************************
+      * DCLGEN TABLE(PAT_BOOKING_DETAILS)                              *
+      *        LIBRARY(BETA33.DCLGEN.COBOL(PATBDCL))                   *
+      *        LANGUAGE(COBOL)                                         *
+      *        QUOTE                                                   *
+      * ... IS THE DCLGEN COMMAND THAT MADE THE FOLLOWING STATEMENTS   *
+      ******************************************************************
+           EXEC SQL DECLARE PAT_BOOKING_DETAILS TABLE
+           ( PATIENT_NAME                   CHAR(12) NOT NULL,
+             PATIENT_MOB_NO                 CHAR(10) NOT NULL,
+             PATIENT_BDID                   CHAR(5) NOT NULL,
+             PATIENT_BDATE                  DATE NOT NULL,
+             PATIENT_BSLOT                  CHAR(5)
+           ) END-EXEC.
+      ******************************************************************
+      * COBOL DECLARATION FOR TABLE PAT_BOOKING_DETAILS                *
+      ******************************************************************
+       01  DCLPAT-BOOKING-DETAILS.
+           10 HV-PATIENT-NAME         PIC X(12).
+           10 HV-PATIENT-MOB-NO       PIC X(10).
+           10 HV-PATIENT-BDID         PIC X(5).
+           10 HV-PATIENT-BDATE        PIC X(10).
+           10 HV-PATIENT-BSLOT        PIC X(5).
+      ******************************************************************
+      * THE NUMBER OF COLUMNS DESCRIBED BY THIS DECLARATION IS 5       *
+      ******************************************************************
+

@@ -1,0 +1,331 @@
+       ID DIVISION.
+       PROGRAM-ID. B33PGM6.
+       AUTHOR. SANDEEP.
+       DATE-WRITTEN. 02-01-2023.
+      *
+       ENVIRONMENT DIVISION.
+      *
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       COPY B33MPS6.
+       COPY DFHAID.
+       COPY DFHBMSCA.
+
+           EXEC SQL
+             INCLUDE SQLCA
+           END-EXEC.
+
+           EXEC SQL
+             INCLUDE CHTDCL
+           END-EXEC.
+
+       01 WS-COMMAREA.
+          10 WS-PROB             PIC X(11).
+
+       01 CURRENT-TIME.
+          05 TSTAMP              PIC S9(14) COMP.
+          05 OUTDATE             PIC X(10) VALUE SPACE.
+          05 OUTTIME             PIC X(08) VALUE SPACE.
+
+       01 WS-RESPCODE            PIC S9(08) COMP.
+
+       01 WS-TERMINATE           PIC X(20) VALUE 'HAVE A NICE DAY! BYE'.
+
+
+       01 WS-KEYWORDS.
+          10 WS-HI               PIC 9(1) VALUE 0.
+          10 WS-HELLO            PIC 9(1) VALUE 0.
+          10 WS-FEV              PIC 9(1) VALUE 0.
+          10 WS-COVID            PIC 9(1) VALUE 0.
+          10 WS-GM               PIC 9(1) VALUE 0.
+          10 WS-GA               PIC 9(1) VALUE 0.
+          10 WS-GE               PIC 9(1) VALUE 0.
+          10 WS-BYE              PIC 9(1) VALUE 0.
+          10 WS-HAU              PIC 9(1) VALUE 0.
+          10 WS-RESP             PIC 9(1) VALUE 0.
+          10 WS-DENT             PIC 9(1) VALUE 0.
+          10 WS-TIME             PIC 9(1) VALUE 0.
+          10 WS-OK               PIC 9(1) VALUE 0.
+          10 WS-TQ               PIC 9(1) VALUE 0.
+
+       LINKAGE SECTION.
+      *
+       PROCEDURE DIVISION.
+       000-MAIN-PARA.
+
+           PERFORM 050-ASK-TIME-PARA THRU 050-EXIT.
+           MOVE OUTTIME TO CTIMEO.
+           MOVE OUTDATE TO CDATEO.
+
+           EVALUATE TRUE
+
+              WHEN EIBCALEN = 0
+                  PERFORM 020-FIND-SESSION THRU 020-EXIT
+                  MOVE LOW-VALUES TO INPUTO
+                  PERFORM 100-SEND-MAP THRU 100-EXIT
+
+              WHEN EIBAID = DFHPF1 OR DFHENTER
+                  PERFORM 200-PROCESS-PARA THRU 200-EXIT
+                  MOVE OUTTIME TO CTIMEO
+                  MOVE OUTDATE TO CDATEO
+                  PERFORM 100-SEND-MAP THRU 100-EXIT
+
+              WHEN EIBAID = DFHPF3 OR DFHPF12
+                  PERFORM 300-TERMINATE-PARA THRU 300-EXIT
+
+              WHEN OTHER
+                  PERFORM 100-SEND-MAP THRU 100-EXIT
+           END-EVALUATE.
+
+           EXEC CICS
+              RETURN TRANSID('PGM6') COMMAREA(WS-COMMAREA)
+           END-EXEC.
+      *
+       010-MOVE-VALUES.
+
+           MOVE LOW-VALUES TO BOTMAPO.
+
+       010-EXIT.
+           EXIT.
+      *
+       020-FIND-SESSION.
+
+           IF CTIMEO(01:02) < 12 THEN
+              MOVE 'GOOD MORNING DEAR! HOW CAN I HELP YOU?' TO OUTPUTO
+           END-IF.
+           IF CTIMEO(01:02) > 12 AND CDATEO(09:02) < 17 THEN
+              MOVE 'GOOD AFTERNOON DEAR! HOW CAN I HELP YOU?' TO OUTPUTO
+           END-IF.
+           IF CTIMEO(01:02) > 17 THEN
+              MOVE 'GOOD EVENING DEAR! HOW CAN I HELP YOU?' TO OUTPUTO
+           END-IF.
+
+       020-EXIT.
+           EXIT.
+      *
+       050-ASK-TIME-PARA.
+           EXEC CICS
+                ASKTIME
+                ABSTIME(TSTAMP)
+           END-EXEC
+           EXEC CICS
+                FORMATTIME
+                ABSTIME(TSTAMP)
+                YYYYMMDD(OUTDATE)
+                DATESEP('/')
+                TIME(OUTTIME)
+                TIMESEP(':')
+           END-EXEC.
+       050-EXIT.
+           EXIT.
+      *
+       100-SEND-MAP.
+
+                EXEC CICS SEND
+                        MAP('BOTMAP')
+                        MAPSET('B33MPS6')
+                   FROM(BOTMAPO)
+                   ERASE
+                   RESP(WS-RESPCODE)
+                END-EXEC
+
+           IF WS-RESPCODE = DFHRESP(NORMAL)
+              CONTINUE
+           END-IF.
+      *
+       100-EXIT.
+           EXIT.
+
+      *
+       200-PROCESS-PARA.
+           MOVE LOW-VALUES TO INPUTI.
+           MOVE LOW-VALUES TO OUTPUTI.
+
+           EXEC CICS RECEIVE
+                MAP('BOTMAP')
+                MAPSET('B33MPS6')
+                INTO(BOTMAPI)
+                RESP(WS-RESPCODE)
+           END-EXEC.
+
+           PERFORM 500-SEARCH-KEYWORD THRU 500-EXIT.
+
+           EVALUATE TRUE
+              WHEN WS-HI NOT EQUAL 0
+                   MOVE 'HI! HOW ARE YOU?'               TO OUTPUTO
+              WHEN WS-HELLO NOT EQUAL 0
+                   MOVE 'HELLO! HOW ARE YOU?'            TO OUTPUTO
+              WHEN WS-FEV NOT EQUAL 0
+                   MOVE 'FEVER' TO WS-PROB
+                   MOVE 'OHHH! DO YOU WANT ME TO SUGGEST ANY TABLETS'
+                                                         TO OUTPUTO
+              WHEN WS-COVID NOT EQUAL 0
+                   MOVE 'COVID'    TO WS-PROB
+                   MOVE 'AHH! THAT HURTS. ANY RECOMENDATION NEEDED'
+                                                         TO OUTPUTO
+              WHEN WS-DENT NOT EQUAL 0
+                   MOVE 'DENTAL' TO WS-PROB
+                   MOVE 'WAIT LET ME PROVIDE SOME RECOMMENDATION'
+                                                         TO OUTPUTO
+              WHEN WS-GA NOT EQUAL 0
+                   MOVE 'GOOD AFTERNOON! LUNCH?'         TO OUTPUTO
+              WHEN WS-GM NOT EQUAL 0
+                   MOVE 'GOOD MORNING! BREAKFAST?'       TO OUTPUTO
+              WHEN WS-GE NOT EQUAL 0
+                   MOVE 'GOOD EVENING! ENJOYING SUNSET?' TO OUTPUTO
+              WHEN WS-BYE NOT EQUAL 0
+                   MOVE 'BYE TAKE CARE!'                 TO OUTPUTO
+              WHEN WS-HAU NOT EQUAL 0
+                   MOVE 'I AM GOOD :) THANKS'            TO OUTPUTO
+              WHEN WS-RESP NOT EQUAL 0
+                   IF WS-PROB = 'FEVER'
+                       EXEC SQL
+                           SELECT C_TABLET1,C_TABLET2
+                             INTO : HV-C-TABLET1,
+                                  : HV-C-TABLET2
+                             FROM CHATBOT_TABLE
+                             WHERE C_PROBLEM = 'VIRAL FEVER'
+                       END-EXEC
+                       IF SQLCODE = 0 THEN
+                          STRING 'TABLETS FOR FEVER - ' DELIMITED BY
+                                                           SIZE
+                                 HV-C-TABLET1 DELIMITED BY SPACE
+                                         ' '  DELIMITED BY SIZE
+                                 HV-C-TABLET2 DELIMITED BY SPACE
+                            INTO OUTPUTO
+                          END-STRING
+                       ELSE
+                          MOVE 'UNABLE TO FIND THE TABLETS' TO OUTPUTO
+                       END-IF
+                   END-IF
+                   IF WS-PROB = 'COVID'
+                       EXEC SQL
+                           SELECT C_TABLET1,C_TABLET2
+                             INTO : HV-C-TABLET1,
+                                  : HV-C-TABLET2
+                             FROM CHATBOT_TABLE
+                             WHERE C_PROBLEM = 'COVID'
+                       END-EXEC
+                       IF SQLCODE = 0 THEN
+                          STRING 'TABLETS FOR COVID - ' DELIMITED BY
+                                                           SIZE
+                                 HV-C-TABLET1 DELIMITED BY SPACE
+                                         ' '  DELIMITED BY SIZE
+                                 HV-C-TABLET2 DELIMITED BY SPACE
+                            INTO OUTPUTO
+                          END-STRING
+                       ELSE
+                          MOVE 'UNABLE TO FIND THE TABLETS' TO OUTPUTO
+                       END-IF
+                   END-IF
+
+                   IF WS-PROB = 'DENTAL'
+                       EXEC SQL
+                           SELECT C_TABLET1,C_TABLET2
+                             INTO : HV-C-TABLET1,
+                                  : HV-C-TABLET2
+                             FROM CHATBOT_TABLE
+                             WHERE C_PROBLEM = 'DENTAL'
+                       END-EXEC
+                       IF SQLCODE = 0 THEN
+                          STRING 'TABLETS FOR DENTAL - ' DELIMITED BY
+                                                           SIZE
+                                 HV-C-TABLET1 DELIMITED BY SPACE
+                                         ' '  DELIMITED BY SIZE
+                                 HV-C-TABLET2 DELIMITED BY SPACE
+                            INTO OUTPUTO
+                          END-STRING
+                       ELSE
+                          MOVE 'UNABLE TO FIND THE TABLETS' TO OUTPUTO
+                       END-IF
+                   END-IF
+
+              WHEN WS-TIME NOT EQUAL 0
+                   IF WS-PROB = 'FEVER' THEN
+                      EXEC SQL
+                         SELECT C_TIMINGS
+                                INTO : HV-C-TIMINGS
+                           FROM CHATBOT_TABLE
+                           WHERE C_PROBLEM = 'VIRAL FEVER'
+                      END-EXEC
+                      STRING 'WHEN TO TAKE - ' DELIMITED BY SIZE
+                             HV-C-TIMINGS      DELIMITED BY SIZE
+                         INTO OUTPUTO
+                      END-STRING
+                   END-IF
+                   IF WS-PROB = 'COVID' THEN
+                      EXEC SQL
+                         SELECT C_TIMINGS
+                                INTO : HV-C-TIMINGS
+                           FROM CHATBOT_TABLE
+                           WHERE C_PROBLEM = 'COVID'
+                      END-EXEC
+                      STRING 'WHEN TO TAKE - ' DELIMITED BY SIZE
+                             HV-C-TIMINGS      DELIMITED BY SIZE
+                         INTO OUTPUTO
+                      END-STRING
+                   END-IF
+
+                   IF WS-PROB = 'DENTAL' THEN
+                      EXEC SQL
+                         SELECT C_TIMINGS
+                                INTO : HV-C-TIMINGS
+                           FROM CHATBOT_TABLE
+                           WHERE C_PROBLEM = 'DENTAL'
+                      END-EXEC
+                      STRING 'WHEN TO TAKE - ' DELIMITED BY SIZE
+                             HV-C-TIMINGS      DELIMITED BY SIZE
+                         INTO OUTPUTO
+                      END-STRING
+                   END-IF
+
+                   IF SQLCODE = 100
+                      MOVE 'UNABLE TO FIND TIMINGS' TO OUTPUTO
+                   END-IF
+              WHEN WS-OK NOT EQUAL 0
+                   MOVE 'YES' TO OUTPUTO
+              WHEN WS-TQ NOT EQUAL 0
+                   MOVE 'NP! ANYTHING ELSE I CAN HELP YOU WITH'
+                                                         TO OUTPUTO
+              WHEN OTHER
+                   MOVE 'WE ARE NOT SUPPOSED TO TALK ABOUT THIS'
+                                                         TO OUTPUTO
+           END-EVALUATE.
+
+       200-EXIT.
+           EXIT.
+      *
+       300-TERMINATE-PARA.
+
+      *    EXEC CICS
+      *        SEND TEXT FROM(WS-TERMINATE)
+      *        ERASE
+      *    END-EXEC.
+
+           EXEC CICS XCTL
+               PROGRAM('B33PGM1')
+           END-EXEC.
+
+       300-EXIT.
+           EXIT.
+      *
+       500-SEARCH-KEYWORD.
+           INSPECT INPUTO TALLYING WS-HI    FOR ALL 'HI'.
+           INSPECT INPUTO TALLYING WS-HELLO FOR ALL 'HELLO'.
+           INSPECT INPUTO TALLYING WS-FEV   FOR ALL 'FEVER'.
+           INSPECT INPUTO TALLYING WS-GM    FOR ALL 'GOOD MORNING'.
+           INSPECT INPUTO TALLYING WS-GA    FOR ALL 'GOOD AFTERNOON'.
+           INSPECT INPUTO TALLYING WS-GE    FOR ALL 'GOOD EVENING'.
+           INSPECT INPUTO TALLYING WS-HAU   FOR ALL 'HOW ARE YOU'.
+           INSPECT INPUTO TALLYING WS-RESP  FOR ALL 'YES PLEASE'.
+           INSPECT INPUTO TALLYING WS-OK    FOR ALL 'OK'.
+           INSPECT INPUTO TALLYING WS-TQ    FOR ALL 'THANK'.
+           INSPECT INPUTO TALLYING WS-COVID FOR ALL 'COVID'.
+           INSPECT INPUTO TALLYING WS-BYE   FOR ALL 'BYE'.
+           INSPECT INPUTO TALLYING WS-DENT  FOR ALL 'DENTAL'.
+           INSPECT INPUTO TALLYING WS-TIME  FOR ALL 'WHEN TO TAKE'.
+       500-EXIT.
+           EXIT.
+
+

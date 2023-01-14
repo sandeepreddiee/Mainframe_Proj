@@ -1,0 +1,21 @@
+      ******************************************************************
+      * DCLGEN TABLE(LOGIN_TABLE)                                      *
+      *        LIBRARY(BETA33.DCLGEN.COBOL(LOGDCL))                    *
+      *        LANGUAGE(COBOL)                                         *
+      *        QUOTE                                                   *
+      * ... IS THE DCLGEN COMMAND THAT MADE THE FOLLOWING STATEMENTS   *
+      ******************************************************************
+           EXEC SQL DECLARE LOGIN_TABLE TABLE
+           ( LOGIN_ID                       CHAR(5) NOT NULL,
+             PASSWORD                       CHAR(6) NOT NULL
+           ) END-EXEC.
+      ******************************************************************
+      * COBOL DECLARATION FOR TABLE LOGIN_TABLE                        *
+      ******************************************************************
+       01  DCLLOGIN-TABLE.
+           10 HV-LOGIN-ID             PIC X(5).
+           10 HV-PASSWORD             PIC X(6).
+      ******************************************************************
+      * THE NUMBER OF COLUMNS DESCRIBED BY THIS DECLARATION IS 2       *
+      ******************************************************************
+

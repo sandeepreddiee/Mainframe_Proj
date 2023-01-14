@@ -1,0 +1,401 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. B33PGM3.
+       AUTHOR. SANDEEP REDDY.
+       DATE-WRITTEN. 24-12-2022.
+
+      *************************************************
+      *         CICS DB2 BOOKING SCREEN               *
+      *************************************************
+
+       ENVIRONMENT DIVISION.
+
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+       01 WS-SQLCODE       PIC -ZZ9.
+       01 EXIT-MSG         PIC X(37) VALUE 'HAVE A NICE DAY BYE BYE.'.
+
+       01 WS-COMMAREA.
+          10 WS-DOC-PROBLEM   PIC X(11).
+          10 WS-DOC-ZIPCODE   PIC X(06).
+          10 WS-DOC-DATE      PIC X(10).
+
+       01 WS-COMM-AREA.
+          10 WS-DID           PIC X(05).
+          10 WS-SLT           PIC X(05).
+          10 WS-PTN           PIC X(12).
+          10 WS-DTE           PIC X(10).
+          10 WS-MOB           PIC 9(10).
+          10 WS-STATUS        PIC X(30).
+
+       01 WS-NULL-INDICATORS.
+          10 SLOT1-NI         PIC S9(04) COMP.
+          10 SLOT2-NI         PIC S9(04) COMP.
+          10 SLOT3-NI         PIC S9(04) COMP.
+          10 SLOT4-NI         PIC S9(04) COMP.
+
+       01 WS-DOC-DETAILS.
+          10 DOC-ID           PIC X(05).
+          10 FILLER           PIC X(15) VALUE SPACE.
+          10 DOC-NAME         PIC X(12).
+          10 FILLER           PIC X(08) VALUE SPACE.
+          10 DOC-SLOT1        PIC X(05).
+          10 FILLER           PIC X(01) VALUE SPACE.
+          10 DOC-SLOT2        PIC X(05).
+          10 FILLER           PIC X(01) VALUE SPACE.
+          10 DOC-SLOT3        PIC X(05).
+          10 FILLER           PIC X(01) VALUE SPACE.
+          10 DOC-SLOT4        PIC X(05).
+          10 FILLER           PIC X(17) VALUE SPACE.
+
+       01 SEND-FLAG           PIC X(01).
+          88  SEND-ERASE               VALUE '1'.
+          88  SEND-DATAONLY            VALUE '2'.
+          88  SEND-ERROR               VALUE '3'.
+
+       01 WS-COUNT            PIC 9(1) VALUE 1.
+       01 WS-CNT              PIC 9(1) VALUE 1.
+
+           COPY B33MPS3.
+           COPY DFHAID.
+           COPY DFHBMSCA.
+
+           EXEC SQL
+             INCLUDE SQLCA
+           END-EXEC.
+
+           EXEC SQL
+             INCLUDE DOCDCL
+           END-EXEC.
+
+           EXEC SQL
+             INCLUDE SLOTDCL
+           END-EXEC.
+
+           EXEC SQL
+             INCLUDE PATBDCL
+           END-EXEC.
+
+           EXEC SQL
+             DECLARE C1 CURSOR WITHOUT HOLD FOR
+                 SELECT DOC_ID,
+                        DOC_NAME,
+                        DOCTOR_SLOT1,
+                        DOCTOR_SLOT2,
+                        DOCTOR_SLOT3,
+                        DOCTOR_SLOT4
+                   FROM DOC_DETAILS
+                   JOIN SLOT_DETAILS
+                        ON DOC_ID = DOCTOR_ID
+                   WHERE DOCTOR_DATE = :WS-DOC-DATE AND
+                         DOC_ZIPCODE = :WS-DOC-ZIPCODE AND
+                         DOC_SPCLTY  = :WS-DOC-PROBLEM
+           END-EXEC.
+
+       LINKAGE SECTION.
+
+       01 DFHCOMMAREA.
+          10 LS-DOC-PROBLEM   PIC X(11).
+          10 LS-DOC-ZIPCODE   PIC X(06).
+          10 LS-DOC-DATE      PIC X(10).
+
+
+       PROCEDURE DIVISION.
+       000-MAIN-PARA.
+
+           EXEC CICS HANDLE CONDITION
+                NOTFND(400-NOTFND-PARA)
+                ERROR(500-TERMINATE-PROGRAM)
+           END-EXEC.
+
+           IF EIBCALEN > 0
+               MOVE DFHCOMMAREA TO WS-COMMAREA
+               MOVE LOW-VALUES TO PATMAPO
+               PERFORM 050-FETCH-DATA THRU 050-EXIT
+               PERFORM 100-SEND-MAP THRU 100-EXIT
+               INITIALIZE WS-COUNT
+               INITIALIZE WS-NULL-INDICATORS
+
+           END-IF.
+           EVALUATE TRUE
+
+
+               WHEN EIBAID = DFHPF2
+                    PERFORM 150-SEND-MAP-ONLY THRU 150-EXIT
+
+               WHEN EIBAID = DFHPF3
+                EXEC CICS XCTL
+                    PROGRAM('B33PGM1')
+                END-EXEC
+
+               WHEN EIBAID = DFHENTER OR DFHPF1
+                    PERFORM 300-PROCESS-BOOKING-PARA THRU 300-EXIT
+
+               WHEN OTHER
+                    MOVE LOW-VALUES TO PATMAPO
+                    PERFORM 100-SEND-MAP THRU 100-EXIT
+           END-EVALUATE.
+
+           EXEC CICS
+              RETURN TRANSID('PGM3') COMMAREA(WS-COMMAREA)
+           END-EXEC.
+
+
+       050-FETCH-DATA.
+
+           EXEC SQL
+               OPEN C1
+           END-EXEC.
+
+           IF SQLCODE = 0 THEN
+              PERFORM UNTIL SQLCODE NOT EQUAL 0
+                  EXEC SQL
+                     FETCH C1
+                           INTO :HV-DOC-ID,
+                                :HV-DOC-NAME,
+                                :HV-DOCTOR-SLOT1:SLOT1-NI,
+                                :HV-DOCTOR-SLOT2:SLOT2-NI,
+                                :HV-DOCTOR-SLOT3:SLOT3-NI,
+                                :HV-DOCTOR-SLOT4:SLOT4-NI
+                  END-EXEC
+
+                  IF SQLCODE = 0 THEN
+                      MOVE HV-DOC-ID TO DOC-ID
+                      MOVE HV-DOC-NAME TO DOC-NAME
+
+                      IF SLOT1-NI = -1 THEN
+                         MOVE SPACES TO DOC-SLOT1
+                      ELSE
+                         MOVE HV-DOCTOR-SLOT1 TO DOC-SLOT1
+                      END-IF
+
+                      IF SLOT2-NI = -1 THEN
+                         MOVE SPACES TO DOC-SLOT2
+                      ELSE
+                         MOVE HV-DOCTOR-SLOT2 TO DOC-SLOT2
+                      END-IF
+
+                      IF SLOT3-NI = -1 THEN
+                         MOVE SPACES TO DOC-SLOT3
+                      ELSE
+                         MOVE HV-DOCTOR-SLOT3 TO DOC-SLOT3
+                      END-IF
+
+                      IF SLOT4-NI = -1 THEN
+                         MOVE SPACES TO DOC-SLOT4
+                      ELSE
+                         MOVE HV-DOCTOR-SLOT4 TO DOC-SLOT4
+                      END-IF
+
+                      MOVE WS-DOC-DETAILS TO RECO(WS-COUNT)
+                      ADD 1 TO WS-COUNT
+                  END-IF
+              END-PERFORM
+           END-IF.
+
+           EXEC SQL
+              CLOSE C1
+           END-EXEC.
+
+       050-EXIT.
+           EXIT.
+
+       100-SEND-MAP.
+           EXEC CICS SEND
+              MAP    ('PATMAP')
+              MAPSET ('B33MPS3')
+              FROM   (PATMAPO)
+              ERASE
+           END-EXEC.
+       100-EXIT.
+           EXIT.
+
+       150-SEND-MAP-ONLY.
+           EXEC CICS SEND
+              MAP    ('PATMAP')
+              MAPSET ('B33MPS3')
+              MAPONLY
+              ERASE
+           END-EXEC.
+       150-EXIT.
+           EXIT.
+
+       200-RECEIVE-MAP.
+            EXEC CICS RECEIVE
+              MAP    ('PATMAP')
+              MAPSET ('B33MPS3')
+              INTO   (PATMAPI)
+            END-EXEC.
+       200-EXIT.
+           EXIT.
+
+       300-PROCESS-BOOKING-PARA.
+           MOVE LOW-VALUES TO PATMAPI.
+           PERFORM 200-RECEIVE-MAP THRU 200-EXIT.
+
+           MOVE DIDI TO HV-DOCTOR-ID.
+           MOVE PNAMEI TO HV-PATIENT-NAME.
+           MOVE PMOBI TO  HV-PATIENT-MOB-NO.
+           MOVE RSLOTI TO HV-PATIENT-BSLOT.
+           MOVE WS-DOC-DATE TO HV-PATIENT-BDATE.
+
+           EXEC SQL
+              SELECT DOCTOR_SLOT1,
+                     DOCTOR_SLOT2,
+                     DOCTOR_SLOT3,
+                     DOCTOR_SLOT4
+               INTO :HV-DOCTOR-SLOT1:SLOT1-NI,
+                    :HV-DOCTOR-SLOT2:SLOT2-NI,
+                    :HV-DOCTOR-SLOT3:SLOT3-NI,
+                    :HV-DOCTOR-SLOT4:SLOT4-NI
+                FROM SLOT_DETAILS
+               WHERE DOCTOR_ID = :HV-DOCTOR-ID AND
+                     DOCTOR_DATE = :WS-DOC-DATE
+           END-EXEC.
+           IF SQLCODE = 0 THEN
+             EVALUATE TRUE
+                WHEN RSLOTI = HV-DOCTOR-SLOT1 AND SLOT1-NI NOT = -1
+                     EXEC SQL
+                       UPDATE SLOT_DETAILS
+                              SET DOCTOR_SLOT1 = NULL
+                        WHERE DOCTOR_ID = :HV-DOCTOR-ID AND
+                              DOCTOR_DATE = :WS-DOC-DATE
+                     END-EXEC
+                     IF SQLCODE = 0 THEN
+                        MOVE RSLOTI TO WS-SLT
+                        MOVE DIDI TO WS-DID
+                        PERFORM 600-NEXT-MAP THRU 600-EXIT
+                     ELSE
+                        MOVE LOW-VALUES TO PATMAPO
+                        MOVE 'UNABLE TO UPDATE SLOT1' TO MSGO
+                     END-IF
+                WHEN RSLOTI = HV-DOCTOR-SLOT2 AND SLOT2-NI NOT = -1
+                     EXEC SQL
+                       UPDATE SLOT_DETAILS
+                              SET DOCTOR_SLOT2 = NULL
+                        WHERE DOCTOR_ID = :HV-DOCTOR-ID AND
+                              DOCTOR_DATE = :WS-DOC-DATE
+                     END-EXEC
+                     IF SQLCODE = 0 THEN
+                        MOVE RSLOTI TO WS-SLT
+                        MOVE DIDI TO WS-DID
+                        PERFORM 600-NEXT-MAP THRU 600-EXIT
+                     ELSE
+                        MOVE LOW-VALUES TO PATMAPO
+                        MOVE 'UNABLE TO UPDATE SLOT2' TO MSGO
+                     END-IF
+                WHEN RSLOTI = HV-DOCTOR-SLOT3 AND SLOT3-NI NOT = -1
+                     EXEC SQL
+                       UPDATE SLOT_DETAILS
+                              SET DOCTOR_SLOT3 = NULL
+                        WHERE DOCTOR_ID = :HV-DOCTOR-ID AND
+                              DOCTOR_DATE = :WS-DOC-DATE
+                     END-EXEC
+                     IF SQLCODE = 0 THEN
+                        MOVE DIDI TO WS-DID
+                        MOVE RSLOTI TO WS-SLT
+                        PERFORM 600-NEXT-MAP THRU 600-EXIT
+                     ELSE
+                        MOVE LOW-VALUES TO PATMAPO
+                        MOVE 'UNABLE TO UPDATE SLOT3' TO MSGO
+                     END-IF
+                WHEN RSLOTI = HV-DOCTOR-SLOT4 AND SLOT4-NI NOT = -1
+                     EXEC SQL
+                       UPDATE SLOT_DETAILS
+                              SET DOCTOR_SLOT4 = NULL
+                        WHERE DOCTOR_ID = :HV-DOCTOR-ID AND
+                              DOCTOR_DATE = :WS-DOC-DATE
+                     END-EXEC
+                     IF SQLCODE = 0 THEN
+                        MOVE RSLOTI TO WS-SLT
+                        MOVE DIDI TO WS-DID
+                        PERFORM 600-NEXT-MAP THRU 600-EXIT
+                     ELSE
+                        MOVE LOW-VALUES TO PATMAPO
+                        MOVE 'UNABLE TO UPDATE SLOT4' TO MSGO
+                     END-IF
+                WHEN OTHER
+                    MOVE 'INVALID SLOT' TO MSGO
+             END-EVALUATE
+           PERFORM 100-SEND-MAP THRU 100-EXIT
+           END-IF.
+
+
+
+       300-EXIT.
+           EXIT.
+
+       400-NOTFND-PARA.
+           MOVE LOW-VALUES TO PATMAPO.
+           MOVE 'AM IN NOTFND PARA RECORD NOT FOUND..' TO MSGO.
+           SET SEND-ERROR TO TRUE.
+           PERFORM 100-SEND-MAP THRU 100-EXIT.
+
+       500-TERMINATE-PROGRAM.
+           MOVE LOW-VALUES TO PATMAPO.
+           MOVE 'PLEASE CONTACT ADMIN' TO MSGO.
+           SET SEND-ERROR TO TRUE.
+           PERFORM 100-SEND-MAP THRU 100-EXIT.
+
+       600-NEXT-MAP.
+
+           IF HV-PATIENT-NAME IS ALPHABETIC THEN
+             EXEC SQL
+                INSERT INTO PAT_BOOKING_DETAILS
+                VALUES(:HV-PATIENT-NAME,
+                       :HV-PATIENT-MOB-NO,
+                       :HV-DOCTOR-ID,
+                       :HV-PATIENT-BDATE,
+                       :HV-PATIENT-BSLOT)
+             END-EXEC
+
+             EVALUATE SQLCODE
+
+                WHEN 0
+
+                   MOVE HV-DOCTOR-ID TO WS-DID
+                   MOVE HV-PATIENT-BSLOT TO WS-SLT
+                   MOVE HV-PATIENT-NAME TO WS-PTN
+                   MOVE HV-PATIENT-MOB-NO TO WS-MOB
+                   MOVE HV-PATIENT-BDATE TO WS-DTE
+                   MOVE 'BOOKED'         TO WS-STATUS
+
+                   EXEC CICS XCTL
+                       PROGRAM('B33PGM4')
+                       COMMAREA(WS-COMM-AREA)
+                   END-EXEC
+
+                WHEN -803
+                   MOVE HV-DOCTOR-ID TO WS-DID
+                   MOVE HV-PATIENT-BSLOT TO WS-SLT
+                   MOVE HV-PATIENT-NAME TO WS-PTN
+                   MOVE HV-PATIENT-MOB-NO TO WS-MOB
+                   MOVE HV-PATIENT-BDATE TO WS-DTE
+                   MOVE 'APPOINTMENT ALREADY BOOKED WITH THE MOB NUM'
+                                                   TO WS-STATUS
+                   EXEC CICS XCTL
+                       PROGRAM('B33PGM4')
+                       COMMAREA(WS-COMM-AREA)
+                   END-EXEC
+
+                WHEN OTHER
+                   MOVE HV-DOCTOR-ID TO WS-DID
+                   MOVE HV-PATIENT-BSLOT TO WS-SLT
+                   MOVE HV-PATIENT-NAME TO WS-PTN
+                   MOVE HV-PATIENT-MOB-NO TO WS-MOB
+                   MOVE HV-PATIENT-BDATE TO WS-DTE
+                   MOVE 'INVALID ERROR OCCURED'     TO WS-STATUS
+                   EXEC CICS XCTL
+                       PROGRAM('B33PGM4')
+                       COMMAREA(WS-COMM-AREA)
+                   END-EXEC
+
+             END-EVALUATE
+
+           ELSE
+              MOVE 'PLEASE ENTER VALID NAME ' TO MSGO
+              PERFORM 100-SEND-MAP THRU 100-EXIT
+           END-IF.
+       600-EXIT.
+           EXIT.
+

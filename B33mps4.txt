@@ -1,0 +1,42 @@
+B33MPS4  DFHMSD TYPE=&SYSPARM,                                         X
+               LANG=COBOL,                                             X
+               MODE=INOUT,                                             X
+               MAPATTS=(COLOR,HILIGHT),                                X
+               CTRL=FREEKB,                                            X
+               STORAGE=AUTO,                                           X
+               TIOAPFX=YES
+***********************************************************************
+FINMAP   DFHMDI SIZE=(24,80),                                          X
+               LINE=1,                                                 X
+               COLUMN=1
+***********************************************************************
+         DFHMDF POS=(02,04),INITIAL='APPOINTMENT DETAILS',LENGTH=19,   X
+               ATTRB=(PROT,BRT),COLOR=GREEN
+         DFHMDF POS=(04,04),INITIAL='PATIENT NAME  :',LENGTH=15,       X
+               ATTRB=(PROT,BRT),COLOR=RED
+PNME     DFHMDF POS=(04,20),INITIAL=' ',LENGTH=12,COLOR=YELLOW,        X
+               ATTRB=(PROT,NORM)
+         DFHMDF POS=(05,04),INITIAL='PATIENT MOB NO:',LENGTH=15,       X
+               ATTRB=(PROT,BRT),COLOR=RED
+PMOB     DFHMDF POS=(05,20),INITIAL=' ',LENGTH=10,COLOR=YELLOW,        X
+               ATTRB=(PROT,NORM)
+         DFHMDF POS=(06,04),INITIAL='BOOKED DOC ID :',LENGTH=15,       X
+               ATTRB=(PROT,BRT),COLOR=RED
+PDOC     DFHMDF POS=(06,20),INITIAL=' ',LENGTH=05,COLOR=YELLOW,        X
+               ATTRB=(PROT,NORM)
+         DFHMDF POS=(07,04),INITIAL='BOOKED DATE   :',LENGTH=15,       X
+               ATTRB=(PROT,BRT),COLOR=RED
+PDTE     DFHMDF POS=(07,20),INITIAL=' ',LENGTH=10,ATTRB=(PROT,NORM),   X
+               COLOR=YELLOW
+         DFHMDF POS=(08,04),INITIAL='BOOKED SLOT   :',LENGTH=15,       X
+               ATTRB=(PROT,BRT),COLOR=RED
+PSLT     DFHMDF POS=(08,20),INITIAL=' ',LENGTH=05,ATTRB=(PROT,NORM),   X
+               COLOR=YELLOW
+         DFHMDF POS=(09,04),INITIAL='STATUS        :',LENGTH=15,       X
+               ATTRB=(PROT,BRT),COLOR=RED
+STA      DFHMDF POS=(09,20),INITIAL=' ',LENGTH=30,ATTRB=(PROT,NORM),   X
+               COLOR=YELLOW
+***********************************************************************
+         DFHMSD TYPE=FINAL
+         END
+

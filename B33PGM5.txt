@@ -1,0 +1,220 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. B33PGM5.
+       AUTHOR. SANDEEP REDDY.
+       DATE-WRITTEN. 27-12-2022.
+
+      *************************************************
+      *         CICS DB2 IND DOCTOR SREEN             *
+      *************************************************
+
+       ENVIRONMENT DIVISION.
+
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+       01 WS-SQLCODE       PIC -ZZ9.
+       01 EXIT-MSG         PIC X(37) VALUE 'HAVE A NICE DAY BYE BYE.'.
+
+       01 WS-COMMAREA.
+          10 WS-LOGID         PIC X(05).
+          10 WS-PASSWORD      PIC X(06).
+
+       01 WS-COMM-AREA        PIC X(01).
+
+       01 WS-PAT-RECORDS.
+          10 WS-PATIENT-NAME  PIC X(12).
+          10 FILLER           PIC X(04) VALUE SPACE.
+          10 WS-PATIENT-M-NO  PIC X(10).
+          10 FILLER           PIC X(07) VALUE SPACE.
+          10 WS-PROBLEM       PIC X(11).
+          10 FILLER           PIC X(03) VALUE SPACE.
+          10 WS-PATIENT-BDATE PIC X(10).
+          10 FILLER           PIC X(04) VALUE SPACE.
+          10 WS-PATIENT-BSLOT PIC X(05).
+          10 FILLER           PIC X(13) VALUE SPACE.
+
+       01 SEND-FLAG           PIC X(01).
+          88  SEND-ERASE               VALUE '1'.
+          88  SEND-DATAONLY            VALUE '2'.
+          88  SEND-ERROR               VALUE '3'.
+
+       01 WS-COUNT            PIC 9(1) VALUE 1.
+       01 WS-CNT              PIC 9(1) VALUE 0.
+
+           COPY B33MPS5.
+           COPY DFHAID.
+           COPY DFHBMSCA.
+
+           EXEC SQL
+             INCLUDE SQLCA
+           END-EXEC.
+
+           EXEC SQL
+             INCLUDE DOCDCL
+           END-EXEC.
+
+           EXEC SQL
+             INCLUDE PATBDCL
+           END-EXEC.
+
+           EXEC SQL
+             DECLARE C1 CURSOR WITHOUT HOLD FOR
+                 SELECT PATIENT_NAME,
+                        PATIENT_MOB_NO,
+                        DOC_SPCLTY,
+                        PATIENT_BDATE,
+                        PATIENT_BSLOT
+                   FROM PAT_BOOKING_DETAILS
+                   JOIN DOC_DETAILS
+                     ON PATIENT_BDID = DOC_ID
+                   WHERE PATIENT_BDID = :WS-LOGID
+           END-EXEC.
+
+       LINKAGE SECTION.
+
+       01 DFHCOMMAREA.
+          10 LS-LOGID         PIC X(05).
+          10 LS-PASSWORD      PIC X(06).
+
+
+       PROCEDURE DIVISION.
+       000-MAIN-PARA.
+
+           EXEC CICS HANDLE CONDITION
+               NOTFND(400-NOTFND-PARA)
+               ERROR(500-TERMINATE-PROGRAM)
+           END-EXEC.
+
+           IF EIBCALEN > ZERO
+             MOVE DFHCOMMAREA  TO WS-COMMAREA
+             MOVE LOW-VALUES TO DOCPTLO
+             MOVE LOW-VALUES TO DFHCOMMAREA
+             PERFORM 050-FETCH-DOCTOR THRU 050-EXIT
+             PERFORM 075-FETCH-DATA THRU 075-EXIT
+             INITIALIZE WS-COUNT
+             MOVE WS-LOGID TO DOCTIDO
+             PERFORM 100-SEND-MAP THRU 100-EXIT
+
+           ELSE
+
+               EVALUATE TRUE
+
+                 WHEN EIBAID = DFHPA1 OR DFHPA2 OR DFHPA3
+                   CONTINUE
+
+                 WHEN EIBAID = DFHPF3
+                   MOVE LOW-VALUES TO  DOCPTLO
+                   EXEC CICS XCTL
+                           PROGRAM('B33PGM2')
+                   END-EXEC
+
+                 WHEN OTHER
+                   MOVE LOW-VALUES TO DOCPTLO
+                   PERFORM 100-SEND-MAP THRU 100-EXIT
+
+               END-EVALUATE
+
+           END-IF.
+           EXEC CICS
+              RETURN TRANSID('PGM5')
+           END-EXEC.
+
+
+       050-FETCH-DOCTOR.
+           EXEC SQL
+              SELECT DOC_NAME
+                   INTO : HV-DOC-NAME
+                   FROM DOC_DETAILS
+                   WHERE DOC_ID = :WS-LOGID
+           END-EXEC.
+
+           IF SQLCODE = 0
+              MOVE HV-DOC-NAME TO DOCTNMO
+           END-IF.
+
+       050-EXIT.
+           EXIT.
+
+       075-FETCH-DATA.
+
+           EXEC SQL
+               OPEN C1
+           END-EXEC.
+
+           IF SQLCODE = 0 THEN
+              PERFORM UNTIL SQLCODE EQUAL 100
+                  EXEC SQL
+                     FETCH C1
+                           INTO :HV-PATIENT-NAME,
+                                :HV-PATIENT-MOB-NO,
+                                :HV-DOC-SPCLTY,
+                                :HV-PATIENT-BDATE,
+                                :HV-PATIENT-BSLOT
+                  END-EXEC
+
+                  IF SQLCODE = 0 THEN
+
+                      MOVE LOW-VALUES TO PRECO(WS-COUNT)
+                      MOVE HV-PATIENT-NAME   TO WS-PATIENT-NAME
+                      MOVE HV-PATIENT-MOB-NO TO WS-PATIENT-M-NO
+                      MOVE HV-DOC-SPCLTY     TO WS-PROBLEM
+                      MOVE HV-PATIENT-BDATE  TO WS-PATIENT-BDATE
+                      MOVE HV-PATIENT-BSLOT  TO WS-PATIENT-BSLOT
+
+                      MOVE WS-PAT-RECORDS TO PRECO(WS-COUNT)
+                      ADD 1 TO WS-COUNT
+
+                  END-IF
+              END-PERFORM
+           END-IF.
+
+           EXEC SQL
+              CLOSE C1
+           END-EXEC.
+
+       075-EXIT.
+           EXIT.
+
+
+       100-SEND-MAP.
+           EXEC CICS SEND
+              MAP    ('DOCPTL')
+              MAPSET ('B33MPS5')
+              FROM   (DOCPTLO)
+              ERASE
+           END-EXEC.
+       100-EXIT.
+           EXIT.
+
+       150-SEND-MAP-ONLY.
+           EXEC CICS SEND
+              MAP    ('DOCPTL')
+              MAPSET ('B33MPS5')
+              MAPONLY
+              ERASE
+           END-EXEC.
+       150-EXIT.
+           EXIT.
+
+       200-RECEIVE-MAP.
+            EXEC CICS RECEIVE
+              MAP    ('DOCPTL')
+              MAPSET ('B33MPS5')
+              INTO   (DOCPTLI)
+            END-EXEC.
+       200-EXIT.
+           EXIT.
+
+       400-NOTFND-PARA.
+           MOVE LOW-VALUES TO DOCPTLO.
+           MOVE 'AM IN NOTFND PARA RECORD NOT FOUND..' TO MSGO.
+           SET SEND-ERROR TO TRUE.
+           PERFORM 100-SEND-MAP THRU 100-EXIT.
+
+       500-TERMINATE-PROGRAM.
+           MOVE LOW-VALUES TO DOCPTLO.
+           MOVE 'PLEASE CONTACT ADMIN' TO MSGO.
+           SET SEND-ERROR TO TRUE.
+           PERFORM 100-SEND-MAP THRU 100-EXIT.
+
+

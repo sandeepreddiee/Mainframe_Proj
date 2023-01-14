@@ -1,0 +1,61 @@
+B33MPS3  DFHMSD TYPE=&SYSPARM,                                         X
+               LANG=COBOL,                                             X
+               MODE=INOUT,                                             X
+               MAPATTS=(COLOR,HILIGHT),                                X
+               DSATTS=(COLOR,HILIGHT),                                 X
+               CTRL=FREEKB,                                            X
+               TERM=ALL,                                               X
+               STORAGE=AUTO,                                           X
+               TIOAPFX=YES
+***********************************************************************
+PATMAP   DFHMDI SIZE=(24,80),                                          X
+               LINE=1,                                                 X
+               COLUMN=1
+***********************************************************************
+         DFHMDF POS=(01,24),LENGTH=17,ATTRB=(PROT,BRT),                X
+               INITIAL='AVAILABLE DOCTORS',COLOR=RED
+         DFHMDF POS=(02,24),LENGTH=17,                                 X
+               INITIAL='=================',                            X
+               ATTRB=(NORM,PROT),COLOR=YELLOW
+***********************************************************************
+         DFHMDF POS=(05,02),LENGTH=10,ATTRB=(PROT,BRT),                X
+               INITIAL='DOCTOR ID ',COLOR=RED
+         DFHMDF POS=(05,22),LENGTH=11,ATTRB=(PROT,BRT),                X
+               INITIAL='DOCTOR NAME',COLOR=RED
+         DFHMDF POS=(05,42),LENGTH=15,ATTRB=(PROT,BRT),                X
+               INITIAL='AVAILABLE SLOTS',COLOR=RED
+***********************************************************************
+REC      DFHMDF POS=(07,02),LENGTH=79,ATTRB=(PROT,NORM),INITIAL=' ',   X
+               OCCURS=5
+***********************************************************************
+         DFHMDF POS=(17,18),LENGTH=43,                                 X
+               INITIAL='ENTER THE DOCTORS ID AND SLOT TIME TO BOOK',   X
+               ATTRB=(PROT,BRT),COLOR=RED
+         DFHMDF POS=(19,05),INITIAL='DOCTORS ID:  ',LENGTH=14,         X
+               ATTRB=(PROT,BRT),COLOR=BLUE
+DID      DFHMDF POS=(19,22),INITIAL='_____',LENGTH=05,COLOR=RED,       X
+               ATTRB=(UNPROT,NORM,FSET,IC)
+         DFHMDF POS=(19,28),INITIAL=' ',LENGTH=01,ATTRB=ASKIP
+         DFHMDF POS=(21,05),INITIAL='REQUIRED SLOT:',LENGTH=14,        X
+               ATTRB=(PROT,BRT),COLOR=BLUE
+RSLOT    DFHMDF POS=(21,22),INITIAL='_____',LENGTH=05,COLOR=RED,       X
+               ATTRB=(UNPROT,NORM,FSET)
+         DFHMDF POS=(21,28),INITIAL=' ',LENGTH=01,ATTRB=ASKIP
+         DFHMDF POS=(19,40),INITIAL='PATIENTS NAME: ',LENGTH=15,       X
+               ATTRB=(PROT,BRT),COLOR=BLUE
+PNAME    DFHMDF POS=(19,57),INITIAL='____________',LENGTH=12,          X
+               ATTRB=(UNPROT,NORM,FSET),COLOR=RED
+         DFHMDF POS=(19,70),INITIAL=' ',LENGTH=01,ATTRB=ASKIP
+         DFHMDF POS=(21,40),INITIAL='MOBILE NUMBER: ',LENGTH=15,       X
+               ATTRB=(PROT,BRT),COLOR=BLUE
+PMOB     DFHMDF POS=(21,57),INITIAL='__________',LENGTH=10,            X
+               ATTRB=(UNPROT,NORM,NUM),PICIN='9(10)',                  X
+               PICOUT='9(10)',COLOR=RED
+         DFHMDF POS=(21,68),INITIAL=' ',LENGTH=01,ATTRB=PROT
+***********************************************************************
+MSG      DFHMDF POS=(23,03),INITIAL=' ',LENGTH=50,ATTRB=(PROT,NORM),   X
+               COLOR=GREEN
+***********************************************************************
+         DFHMSD TYPE=FINAL
+         END
+

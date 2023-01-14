@@ -1,0 +1,222 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. B33PGM2.
+       AUTHOR. SANDEEP REDDY.
+       DATE-WRITTEN. 24-12-2022.
+
+      *************************************************
+      *           CICS DB2 LOGIN SCREEN               *
+      *************************************************
+
+       ENVIRONMENT DIVISION.
+
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+
+       01 WS-SQLCODE       PIC -ZZ9.
+
+       01 WS-COMMAREA.
+          10 LOG-ID        PIC X(05).
+          10 LOG-PASS      PIC X(06).
+
+       01 EXIT-MSG         PIC X(37) VALUE 'TAKE CARE BYE BYE!     '.
+
+       01 CURRENT-TIME.
+         05 TSTAMP         PIC S9(14) COMP.
+         05 OUTDATE        PIC X(10) VALUE SPACE.
+         05 OUTTIME        PIC X(08) VALUE SPACE.
+
+           COPY B33MPS2.
+           COPY DFHAID.
+           COPY DFHBMSCA.
+
+           EXEC SQL
+             INCLUDE SQLCA
+           END-EXEC.
+
+           EXEC SQL
+             INCLUDE LOGDCL
+           END-EXEC.
+
+       LINKAGE SECTION.
+
+       01 DFHCOMMAREA.
+          10 LS-LOG-ID        PIC X(05).
+          10 LS-LOG-PASS      PIC X(06).
+
+
+       PROCEDURE DIVISION.
+
+           PERFORM 005-ASK-TIME-PARA THRU 005-EXIT.
+
+           IF EIBCALEN = ZERO
+              PERFORM 100-SEND-MAP THRU 100-EXIT
+
+           ELSE
+
+              EVALUATE TRUE
+
+                  WHEN EIBAID = DFHPF2
+                       PERFORM 300-SEND-MAP-ONLY THRU 300-EXIT
+
+                  WHEN EIBAID = DFHPF3
+                       PERFORM 500-EXIT-PARA THRU 500-EXIT
+
+                  WHEN EIBAID = DFHENTER OR DFHPF1
+                       PERFORM 400-VALIDATION-PARA THRU 400-EXIT
+
+                  WHEN OTHER
+                       MOVE LOW-VALUES TO LOGMAPO
+                       PERFORM 005-ASK-TIME-PARA THRU 005-EXIT
+                       MOVE "INVALID KEY PRESSED" TO MSGO
+                       PERFORM 100-SEND-MAP THRU 100-EXIT
+
+             END-EVALUATE
+
+           END-IF.
+
+           EXEC CICS
+              RETURN TRANSID('PGM2') COMMAREA(WS-COMMAREA)
+           END-EXEC.
+
+       005-ASK-TIME-PARA.
+
+           MOVE LOW-VALUES TO LOGMAPO.
+
+           EXEC CICS
+                ASKTIME
+                ABSTIME(TSTAMP)
+           END-EXEC
+           EXEC CICS
+                FORMATTIME
+                ABSTIME(TSTAMP)
+                YYYYMMDD(OUTDATE)
+                DATESEP('/')
+                TIME(OUTTIME)
+                TIMESEP(':')
+           END-EXEC.
+
+           MOVE OUTDATE TO CDATEI.
+           MOVE OUTTIME TO CTIMEI.
+
+       005-EXIT.
+           EXIT.
+
+
+       100-SEND-MAP.
+           EXEC CICS SEND
+              MAP    ('LOGMAP')
+              MAPSET ('B33MPS2')
+              FROM   (LOGMAPO)
+              ERASE
+           END-EXEC.
+       100-EXIT.
+           EXIT.
+
+       200-RECEIVE-PARA.
+            EXEC CICS RECEIVE
+              MAP    ('LOGMAP')
+              MAPSET ('B33MPS2')
+              INTO   (LOGMAPI)
+            END-EXEC.
+       200-EXIT.
+           EXIT.
+
+       300-SEND-MAP-ONLY.
+           EXEC CICS SEND
+              MAP    ('LOGMAP')
+              MAPSET ('B33MPS2')
+              MAPONLY
+              ERASE
+           END-EXEC.
+       300-EXIT.
+           EXIT.
+
+       400-VALIDATION-PARA.
+           MOVE DFHBMUNP TO LOGIDA
+
+           PERFORM 200-RECEIVE-PARA THRU 200-EXIT.
+           MOVE LOGIDI TO LOG-ID
+           MOVE LOGIDI TO HV-LOGIN-ID
+           MOVE PSWRDI TO HV-PASSWORD
+
+           EXEC SQL
+              SELECT LOGIN_ID
+                INTO :HV-LOGIN-ID
+                FROM LOGIN_TABLE WHERE LOGIN_ID = :HV-LOGIN-ID OR
+                                       LOGIN_ID = :LS-LOG-ID
+           END-EXEC.
+
+           EVALUATE SQLCODE
+               WHEN 0
+                  PERFORM 005-ASK-TIME-PARA THRU 005-EXIT
+                  PERFORM 475-VALIDATE-PASSWORD THRU 475-EXIT
+               WHEN 100
+                  PERFORM 005-ASK-TIME-PARA THRU 005-EXIT
+                  MOVE "DOCTOR NOT FOUND" TO MSGO
+               WHEN -302
+                  PERFORM 005-ASK-TIME-PARA THRU 005-EXIT
+                  MOVE "INVALID DOC ID" TO MSGO
+               WHEN OTHER
+                  MOVE SQLCODE       TO  WS-SQLCODE
+                  PERFORM 005-ASK-TIME-PARA THRU 005-EXIT
+                  STRING "SQL CODE: " DELIMITED BY SIZE
+                         WS-SQLCODE   DELIMITED BY SIZE
+                  INTO MSGO
+           END-EVALUATE.
+           PERFORM 600-SEND-MAP-ERASEUP THRU 600-EXIT.
+
+       400-EXIT.
+           EXIT.
+
+       450-NEXT-SCREEN.
+           EXEC CICS XCTL
+               PROGRAM('B33PGM5')
+               COMMAREA(WS-COMMAREA)
+           END-EXEC.
+       450-EXIT.
+           EXIT.
+
+       475-VALIDATE-PASSWORD.
+           EXEC SQL
+              SELECT PASSWORD
+                     INTO : HV-PASSWORD
+                FROM LOGIN_TABLE
+                WHERE PASSWORD = :HV-PASSWORD AND
+                (LOGIN_ID = :HV-LOGIN-ID OR LOGIN_ID = :LS-LOG-ID)
+           END-EXEC.
+           IF SQLCODE = 0
+               MOVE HV-LOGIN-ID TO LOG-ID
+               MOVE HV-PASSWORD TO LOG-PASS
+               PERFORM 005-ASK-TIME-PARA THRU 005-EXIT
+               PERFORM 450-NEXT-SCREEN THRU 450-EXIT
+           ELSE
+               PERFORM 005-ASK-TIME-PARA THRU 005-EXIT
+               MOVE HV-LOGIN-ID TO LOGIDO
+               MOVE DFHBMPRO TO LOGIDA
+               MOVE "WRONG PASSWORD" TO MSGO
+           END-IF.
+
+       475-EXIT.
+           EXIT.
+
+       500-EXIT-PARA.
+           EXEC CICS
+              XCTL PROGRAM('B33PGM1')
+           END-EXEC.
+      *    EXEC CICS SEND TEXT FROM(EXIT-MSG)ERASE END-EXEC.
+      *    EXEC CICS SEND CONTROL FREEKB END-EXEC.
+      *    EXEC CICS RETURN END-EXEC.
+       500-EXIT.
+           EXIT.
+
+       600-SEND-MAP-ERASEUP.
+           EXEC CICS SEND
+              MAP    ('LOGMAP')
+              MAPSET ('B33MPS2')
+              FROM   (LOGMAPO)
+           END-EXEC.
+       600-EXIT.
+           EXIT.
+
+

@@ -1,0 +1,30 @@
+      ******************************************************************
+      * DCLGEN TABLE(SLOT_DETAILS)                                     *
+      *        LIBRARY(BETA33.DCLGEN.COBOL(SLOTDCL))                   *
+      *        ACTION(REPLACE)                                         *
+      *        LANGUAGE(COBOL)                                         *
+      *        QUOTE                                                   *
+      * ... IS THE DCLGEN COMMAND THAT MADE THE FOLLOWING STATEMENTS   *
+      ******************************************************************
+           EXEC SQL DECLARE SLOT_DETAILS TABLE
+           ( DOCTOR_ID                      CHAR(5) NOT NULL,
+             DOCTOR_DATE                    DATE NOT NULL,
+             DOCTOR_SLOT1                   CHAR(5),
+             DOCTOR_SLOT2                   CHAR(5),
+             DOCTOR_SLOT3                   CHAR(5),
+             DOCTOR_SLOT4                   CHAR(5)
+           ) END-EXEC.
+      ******************************************************************
+      * COBOL DECLARATION FOR TABLE SLOT_DETAILS                       *
+      ******************************************************************
+       01  DCLSLOT-DETAILS.
+           10 HV-DOCTOR-ID            PIC X(5).
+           10 HV-DOCTOR-DATE          PIC X(10).
+           10 HV-DOCTOR-SLOT1         PIC X(5).
+           10 HV-DOCTOR-SLOT2         PIC X(5).
+           10 HV-DOCTOR-SLOT3         PIC X(5).
+           10 HV-DOCTOR-SLOT4         PIC X(5).
+      ******************************************************************
+      * THE NUMBER OF COLUMNS DESCRIBED BY THIS DECLARATION IS 6       *
+      ******************************************************************
+

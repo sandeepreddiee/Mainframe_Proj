@@ -1,0 +1,210 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. B33PGM4.
+       AUTHOR. SANDEEP REDDY.
+       DATE-WRITTEN. 27-12-2022.
+
+      *************************************************
+      *           FINAL CONFIRM SCREEN                *
+      *************************************************
+
+       ENVIRONMENT DIVISION.
+
+       DATA DIVISION.
+
+       WORKING-STORAGE SECTION.
+       01 END-OF-SESSION-MESSAGE            PIC X(37) VALUE
+                                       '_END OF TRANSACTION __..'.
+       01 WS-COMM-AREA.
+          10 WS-DOC-ID                      PIC X(05).
+          10 WS-DOC-SLOT                    PIC X(05).
+          10 WS-DOC-PNAME                   PIC X(12).
+          10 WS-DOC-BDATE                   PIC X(10).
+          10 WS-DOC-MOB-NO                  PIC 9(10).
+          10 WS-STATUS                      PIC X(30).
+
+       01 WS-ARRAY.
+          05 WS-JCL-LINE       PIC X(80) OCCURS 8 TIMES INDEXED BY I.
+       01 WS-JCL-STMT          PIC X(80).
+       01 WS-TOKEN             PIC X(08).
+       01 WS-RESP              PIC S9(4) COMP.
+       01 WS-JCL-LENGTH        PIC S9(8) COMP VALUE 80.
+
+       01 WS-MESSAGES.
+          05 WS-MSG-1          PIC X(30) VALUE 'SPOOL OPEN ERROR'.
+          05 WS-MSG-2          PIC X(30) VALUE 'SPOOL WRITE ERROR'.
+          05 WS-MSG-3          PIC X(30) VALUE 'SPOOL CLOSE ERROR'.
+
+       COPY B33MPS4.
+       COPY DFHAID.
+       COPY DFHBMSCA.
+
+
+       LINKAGE SECTION.
+
+       01 DFHCOMMAREA.
+          10 LS-DOC-ID                       PIC X(05).
+          10 LS-DOC-SLOT                     PIC X(05).
+          10 LS-DOC-PNAME                    PIC X(12).
+          10 LS-DOC-BDATE                    PIC X(10).
+          10 LS-DOC-MOB-NO                   PIC 9(10).
+          10 LS-STATUS                       PIC X(30).
+
+       PROCEDURE DIVISION.
+       000-MAIN-PARA.
+
+
+           EVALUATE TRUE
+
+             WHEN EIBCALEN = ZERO
+               MOVE LOW-VALUES TO FINMAPO
+               PERFORM SEND-MAP
+
+             WHEN EIBAID = DFHPF3 OR EIBAID = DFHPF12
+
+               EXEC CICS XCTL
+                     PROGRAM('B33PGM1')
+               END-EXEC
+
+
+             WHEN OTHER
+               MOVE DFHCOMMAREA  TO WS-COMM-AREA
+               PERFORM 500-PROCESS-PARA THRU 500-EXIT
+
+           END-EVALUATE.
+
+           EXEC CICS RETURN
+                  TRANSID('PGM4') COMMAREA(WS-COMM-AREA)
+           END-EXEC.
+
+
+
+       SEND-MAP.
+           EXEC CICS SEND
+              MAP    ('FINMAP')
+              MAPSET ('B33MPS4')
+              FROM   (FINMAPO)
+              ERASE
+           END-EXEC.
+
+           EXIT.
+
+       SEND-MAP-DATA.
+           EXEC CICS SEND
+              MAP    ('FINMAP')
+              MAPSET ('B33MPS4')
+              FROM   (FINMAPO)
+              DATAONLY
+           END-EXEC.
+
+           EXIT.
+
+       RECEIVE-MAP.
+            EXEC CICS RECEIVE
+              MAP    ('FINMAP')
+              MAPSET ('B33MPS4')
+              INTO   (FINMAPI)
+            END-EXEC.
+
+           EXIT.
+       500-PROCESS-PARA.
+           MOVE LOW-VALUES TO FINMAPO.
+           MOVE WS-DOC-ID TO PDOCO.
+           MOVE WS-DOC-SLOT   TO PSLTO.
+           MOVE WS-DOC-PNAME TO PNMEO.
+           MOVE WS-DOC-BDATE TO PDTEO.
+           MOVE WS-DOC-MOB-NO TO PMOBO.
+           MOVE WS-STATUS     TO STAO.
+           PERFORM SEND-MAP.
+
+       500-EXIT.
+           EXIT.
+
+       100-MOVE-PARA.
+
+           MOVE '//BETA33S JOB 123,''SAI'',CLASS=A,' TO WS-JCL-LINE(1).
+           MOVE '//  MSGLEVEL=(1,1),NOTIFY=&SYSUID' TO WS-JCL-LINE(2).
+           MOVE '//STEP01 EXEC PGM=IEBGENER' TO WS-JCL-LINE(3).
+           MOVE '//SYSUT1 DD DSN=BETA33.SANDEEP.TEST.PS1,DISP=SHR'
+                                             TO WS-JCL-LINE(4).
+           MOVE '//SYSUT2 DD DSN=BETA33.SANDEEP.TEST.PS3,DISP=SHR'
+                                             TO WS-JCL-LINE(5).
+           MOVE '//SYSIN DD DUMMY'           TO WS-JCL-LINE(6).
+           MOVE '//SYSOUT DD SYSOUT=*'       TO WS-JCL-LINE(7).
+           MOVE '//SYSPRINT DD SYSOUT=*' TO WS-JCL-LINE(8).
+
+       100-EXIT.
+           EXIT.
+
+       200-SPOOL-OPEN.
+
+           EXEC CICS SPOOLOPEN OUTPUT
+                NODE('*')
+                USERID('INTRDR')
+                TOKEN(WS-TOKEN)
+                RESP(WS-RESP)
+           END-EXEC.
+
+           EVALUATE WS-RESP
+             WHEN DFHRESP(NORMAL)
+                  CONTINUE
+             WHEN OTHER
+                  EXEC CICS SEND
+                     FROM(WS-MSG-1)
+                     LENGTH(LENGTH OF WS-MSG-1)
+                     ERASE
+                  END-EXEC
+                  EXEC CICS
+                     RETURN
+                  END-EXEC
+           END-EVALUATE.
+
+       200-EXIT.
+           EXIT.
+
+       300-SPOOL-WRITE.
+           PERFORM VARYING I FROM 1 BY 1 UNTIL I > 6
+              MOVE WS-JCL-LINE(I) TO WS-JCL-STMT
+              EXEC CICS SPOOLWRITE
+                  TOKEN(WS-TOKEN)
+                  FROM(WS-JCL-STMT)
+                  FLENGTH(WS-JCL-LENGTH)
+                  RESP(WS-RESP)
+              END-EXEC
+              EVALUATE WS-RESP
+                 WHEN DFHRESP(NORMAL)
+                     CONTINUE
+                 WHEN OTHER
+                     EXEC CICS SEND
+                        FROM(WS-MSG-2)
+                        LENGTH(LENGTH OF WS-MSG-2)
+                        ERASE
+                     END-EXEC
+                     EXEC CICS
+                        RETURN
+                     END-EXEC
+              END-EVALUATE
+           END-PERFORM.
+       300-EXIT.
+           EXIT.
+
+       400-SPOOL-CLOSE.
+           EXEC CICS SPOOLCLOSE
+               TOKEN(WS-TOKEN)
+               RESP(WS-RESP)
+           END-EXEC.
+           EVALUATE WS-RESP
+               WHEN DFHRESP(NORMAL)
+                   CONTINUE
+               WHEN OTHER
+                   EXEC CICS SEND
+                       FROM(WS-MSG-3)
+                       LENGTH(LENGTH OF WS-MSG-3)
+                       ERASE
+                   END-EXEC
+                   EXEC CICS
+                       RETURN
+                   END-EXEC
+           END-EVALUATE.
+       400-EXIT.
+           EXIT.
+

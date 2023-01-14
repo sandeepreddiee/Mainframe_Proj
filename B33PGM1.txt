@@ -1,0 +1,324 @@
+       ID DIVISION.
+       PROGRAM-ID. B33PGM1.
+       AUTHOR. SANDEEP.
+       DATE-WRITTEN. 23-12-2022.
+      *
+       ENVIRONMENT DIVISION.
+      *
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+       COPY B33MPS1.
+       COPY DFHAID.
+       COPY DFHBMSCA.
+
+
+           EXEC SQL
+             INCLUDE SQLCA
+           END-EXEC.
+
+           EXEC SQL
+             INCLUDE DOCDCL
+           END-EXEC.
+
+       01 WS-COMMAREA.
+          10 WS-PROBLEM          PIC X(11).
+          10 WS-ZIPCODE          PIC X(06).
+          10 WS-DATE             PIC X(10).
+
+       01 CURRENT-TIME.
+          05 TSTAMP              PIC S9(14) COMP.
+          05 OUTDATE             PIC X(10) VALUE SPACE.
+          05 OUTTIME             PIC X(08) VALUE SPACE.
+
+       01 WS-RESPCODE1           PIC S9(08) COMP.
+       01 WS-RESPCODE2           PIC S9(08) COMP.
+       01 WS-RESPCODE3           PIC S9(08) COMP.
+
+       01 RESPCODE               PIC S9(08) COMP.
+
+       01 WS-TERMINATE           PIC X(20) VALUE 'HAVE A NICE DAY! BYE'.
+
+       01 WS-ROW-COUNT           PIC 9(2).
+
+       01 PAT-REC.
+          10 PATPROB             PIC X(11).
+          10 WS-FILLER           PIC X(01) VALUE SPACE.
+          10 PATPIN              PIC X(06).
+          10 WS-FILLER           PIC X(01) VALUE SPACE.
+          10 PATDATE             PIC X(10).
+          10 WS-FILLER           PIC X(51) VALUE SPACES.
+
+       LINKAGE SECTION.
+      *
+       PROCEDURE DIVISION.
+       000-MAIN-PARA.
+
+           PERFORM 050-ASK-TIME-PARA THRU 050-EXIT.
+           MOVE OUTTIME TO CTIMEI.
+           MOVE OUTDATE TO CDATEI.
+
+           EVALUATE TRUE
+
+              WHEN EIBCALEN = 0
+                  MOVE -1 TO PRBL
+                  PERFORM 010-MOVE-LOW-VALUES THRU 010-EXIT
+                  PERFORM 100-SEND-MAP THRU 100-EXIT
+                  PERFORM 175-SEND-MAP1 THRU 175-EXIT
+
+              WHEN EIBAID = DFHPF1 OR DFHENTER
+                  PERFORM 200-PROCESS-PARA THRU 200-EXIT
+
+              WHEN EIBAID = DFHCLEAR OR DFHPF2
+                  MOVE LOW-VALUES TO MAP2O
+                  PERFORM 100-SEND-MAP THRU 100-EXIT
+
+              WHEN EIBAID = DFHPF3 OR DFHPF12
+                  PERFORM 300-TERMINATE-PARA THRU 300-EXIT
+
+              WHEN EIBAID = DFHPF8
+                  EXEC CICS XCTL
+                       PROGRAM('B33PGM2')
+                  END-EXEC
+
+
+              WHEN EIBAID = DFHPF9
+                  EXEC CICS XCTL
+                       PROGRAM('B33PGM6')
+                  END-EXEC
+
+              WHEN OTHER
+                  MOVE 'INVALID KEY ENTERED' TO MSGO
+                  PERFORM 100-SEND-MAP THRU 100-EXIT
+           END-EVALUATE.
+
+           EXEC CICS
+              RETURN TRANSID('B331') COMMAREA(WS-COMMAREA)
+           END-EXEC.
+      *
+       010-MOVE-LOW-VALUES.
+
+           MOVE LOW-VALUES TO MAP2O.
+           MOVE LOW-VALUES TO MAP3O.
+
+       010-EXIT.
+           EXIT.
+      *
+       050-ASK-TIME-PARA.
+           EXEC CICS
+                ASKTIME
+                ABSTIME(TSTAMP)
+           END-EXEC
+           EXEC CICS
+                FORMATTIME
+                ABSTIME(TSTAMP)
+                YYYYMMDD(OUTDATE)
+                DATESEP('/')
+                TIME(OUTTIME)
+                TIMESEP(':')
+           END-EXEC.
+       050-EXIT.
+           EXIT.
+      *
+       100-SEND-MAP.
+
+                EXEC CICS SEND
+                        MAP('MAP2')
+                        MAPSET('B33MPS1')
+                   FROM(MAP2O)
+                   ERASE
+                   RESP(WS-RESPCODE2)
+                END-EXEC
+
+                EXEC CICS SEND
+                        MAP('MAP3')
+                        MAPSET('B33MPS1')
+                   FROM(MAP3O)
+                   RESP(WS-RESPCODE3)
+                END-EXEC
+
+           IF WS-RESPCODE2 = DFHRESP(NORMAL)
+              IF WS-RESPCODE3 = DFHRESP(NORMAL)
+                 CONTINUE
+              END-IF
+           END-IF.
+      *
+       100-EXIT.
+           EXIT.
+
+       150-SEND-MAP-ONLY.
+           EXEC CICS SEND
+              MAP    ('MAP2')
+              MAPSET ('B33MPS1')
+              MAPONLY
+              ERASE
+           END-EXEC.
+
+           EXEC CICS SEND
+              MAP    ('MAP3')
+              MAPSET ('B33MPS1')
+              MAPONLY
+              ERASE
+           END-EXEC.
+       150-EXIT.
+           EXIT.
+      *
+       175-SEND-MAP1.
+                EXEC CICS SEND
+                        MAP('MAP1')
+                        MAPSET('B33MPS1')
+                   FROM(MAP1O)
+                   RESP(WS-RESPCODE1)
+                END-EXEC.
+       175-EXIT.
+           EXIT.
+      *
+       200-PROCESS-PARA.
+           MOVE LOW-VALUES TO MAP2I.
+
+           EXEC CICS RECEIVE
+                MAP('MAP2')
+                MAPSET('B33MPS1')
+                INTO(MAP2I)
+                RESP(WS-RESPCODE2)
+           END-EXEC
+
+           MOVE RDATEI TO WS-DATE.
+           MOVE PRBI TO WS-PROBLEM.
+           MOVE ZIPI TO WS-ZIPCODE.
+
+           IF WS-RESPCODE2 = DFHRESP(NORMAL)
+              CONTINUE
+
+           ELSE
+              IF WS-RESPCODE2 = DFHRESP(MAPFAIL)
+                 MOVE 'ENTER ATLEAST 1 FIELD' TO MSGO
+                 PERFORM 100-SEND-MAP THRU 100-EXIT
+                 PERFORM 175-SEND-MAP1 THRU 175-EXIT
+
+                 EXEC CICS
+                    RETURN TRANSID('B331') COMMAREA(WS-COMMAREA)
+                 END-EXEC
+              END-IF
+           END-IF.
+
+           EVALUATE TRUE
+
+              WHEN RDATEL = 0 OR PRBL = 0 OR ZIPL = 0 OR RDATEI(9:2) > 6
+                 EVALUATE TRUE
+                 WHEN ZIPL = 0
+                    MOVE 'PLEASE ENTER THE ZIPCODE' TO MSGO
+                    MOVE -1 TO ZIPL
+                    MOVE PRBI TO PRBO
+                    MOVE RDATEI TO RDATEO
+                    PERFORM 100-SEND-MAP THRU 100-EXIT
+                    PERFORM 175-SEND-MAP1 THRU 175-EXIT
+
+
+                 WHEN RDATEL = 0
+                    MOVE 'PLEASE ENTER THE DATE' TO MSGO
+                    MOVE -1 TO RDATEL
+                    PERFORM 100-SEND-MAP THRU 100-EXIT
+                    PERFORM 175-SEND-MAP1 THRU 175-EXIT
+                 WHEN PRBL = 0
+                    MOVE 'PLEASE ENTER THE PROBLEM' TO MSGO
+                    MOVE -1 TO PRBL
+                    PERFORM 100-SEND-MAP THRU 100-EXIT
+                    PERFORM 175-SEND-MAP1 THRU 175-EXIT
+
+                 WHEN OTHER
+                    IF RDATEI(09:02) > 06 THEN
+                    MOVE 'SLOTS NOT YET OPEN FOR THE DATE' TO MSGO
+                    PERFORM 100-SEND-MAP THRU 100-EXIT
+                    PERFORM 175-SEND-MAP1 THRU 175-EXIT
+                    END-IF
+                 END-EVALUATE
+                 EXEC CICS
+                    RETURN TRANSID('B331') COMMAREA(WS-COMMAREA)
+                 END-EXEC
+
+              WHEN OTHER
+                 MOVE ZIPI TO HV-DOC-ZIPCODE
+                 EXEC SQL
+                     SELECT DOC_ZIPCODE
+                          INTO : HV-DOC-ZIPCODE
+                          FROM DOC_DETAILS
+                          WHERE DOC_ZIPCODE IN(:HV-DOC-ZIPCODE)
+                 END-EXEC
+                 EVALUATE SQLCODE
+
+                 WHEN 0
+                    EXEC CICS XCTL
+                        PROGRAM('B33PGM3')
+                        COMMAREA(WS-COMMAREA)
+                    END-EXEC
+                    PERFORM 010-MOVE-LOW-VALUES THRU 010-EXIT
+                    PERFORM 100-SEND-MAP THRU 100-EXIT
+                    PERFORM 175-SEND-MAP1 THRU 175-EXIT
+
+                 WHEN -811
+                    EXEC CICS XCTL
+                        PROGRAM('B33PGM3')
+                        COMMAREA(WS-COMMAREA)
+                    END-EXEC
+                    PERFORM 010-MOVE-LOW-VALUES THRU 010-EXIT
+                    PERFORM 100-SEND-MAP THRU 100-EXIT
+                    PERFORM 175-SEND-MAP1 THRU 175-EXIT
+
+                 WHEN 100
+                    PERFORM 400-WRITE-PARA THRU 400-EXIT
+                    PERFORM 010-MOVE-LOW-VALUES THRU 010-EXIT
+                    MOVE 'SORRY! WE ARE NOT YET ARRIVED YOUR CITY' TO
+                              MSGO
+                    PERFORM 100-SEND-MAP THRU 100-EXIT
+                    PERFORM 175-SEND-MAP1 THRU 175-EXIT
+
+                 WHEN OTHER
+                    PERFORM 010-MOVE-LOW-VALUES THRU 010-EXIT
+                    PERFORM 100-SEND-MAP THRU 100-EXIT
+                    PERFORM 175-SEND-MAP1 THRU 175-EXIT
+
+                 END-EVALUATE
+           END-EVALUATE.
+
+
+       200-EXIT.
+           EXIT.
+      *
+       300-TERMINATE-PARA.
+
+           EXEC CICS
+               SEND TEXT FROM(WS-TERMINATE)
+               ERASE
+           END-EXEC.
+
+           EXEC CICS
+               RETURN
+           END-EXEC.
+
+       300-EXIT.
+           EXIT.
+
+       400-WRITE-PARA.
+           EXEC CICS
+                READ FILE('PATFILE') INTO(PAT-REC) RIDFLD(PATPIN)
+                RESP(RESPCODE)
+           END-EXEC.
+           IF RESPCODE = DFHRESP(NORMAL)
+              CONTINUE
+           ELSE
+           IF RESPCODE = DFHRESP(NOTFND)
+                MOVE PRBI   TO PATPROB
+                MOVE ZIPI   TO PATPIN
+                MOVE RDATEI TO PATDATE
+                EXEC CICS WRITE
+                    FILE('PATFILE') FROM(PAT-REC) RIDFLD(PATPIN)
+                    RESP(RESPCODE)
+                END-EXEC
+           END-IF
+           END-IF.
+
+       400-EXIT.
+           EXIT.
+
+

@@ -1,0 +1,67 @@
+B33MPS2  DFHMSD TYPE=&SYSPARM,MODE=INOUT,CTRL=(FREEKB,ALARM),          X
+               LANG=COBOL,TIOAPFX=YES,                                 X
+               DSATTS=(COLOR,HILIGHT),                                 X
+               MAPATTS=(COLOR,HILIGHT),                                X
+               STORAGE=AUTO
+*********************************************************************
+LOGMAP   DFHMDI SIZE=(24,80),LINE=1,COLUMN=1
+*********************************************************************
+         DFHMDF POS=(02,25),LENGTH=19,ATTRB=(PROT,BRT),                X
+               INITIAL='DOCTOR LOGIN PORTAL',COLOR=RED,HILIGHT=REVERSE
+         DFHMDF POS=(02,45),INITIAL=' ',LENGTH=01,ATTRB=PROT
+*********************************************************************
+         DFHMDF POS=(04,62),INITIAL='DATE :',LENGTH=06,                X
+               ATTRB=(PROT,NORM)
+CDATE    DFHMDF POS=(04,69),INITIAL='00/00/0000',LENGTH=10,            X
+               ATTRB=(UNPROT,NORM)
+         DFHMDF POS=(05,62),INITIAL='TIME :',LENGTH=06,                X
+               ATTRB=(PROT,NORM)
+CTIME    DFHMDF POS=(05,69),INITIAL='00-00-00',LENGTH=08,              X
+               ATTRB=(UNPROT,NORM)
+         DFHMDF POS=(06,24),INITIAL='WORLD OF HOSPITAL',LENGTH=17,     X
+               ATTRB=(PROT,NORM),COLOR=YELLOW
+         DFHMDF POS=(06,42),INITIAL='ITY',LENGTH=03,COLOR=RED,         X
+               ATTRB=(PROT,BRT)
+*********************************************************************
+         DFHMDF POS=(15,7),INITIAL='_____________________',            X
+               ATTRB=(PROT,NORM),COLOR=RED,LENGTH=20
+         DFHMDF POS=(9,6),INITIAL='|',LENGTH=01,ATTRB=(PROT,NORM),     X
+               COLOR=RED
+         DFHMDF POS=(10,6),INITIAL='|',LENGTH=01,ATTRB=(PROT,NORM),    X
+               COLOR=RED
+         DFHMDF POS=(11,6),INITIAL='|',LENGTH=01,ATTRB=(PROT,NORM),    X
+               COLOR=RED
+         DFHMDF POS=(12,6),INITIAL='|',LENGTH=01,ATTRB=(PROT,NORM),    X
+               COLOR=RED
+         DFHMDF POS=(13,6),INITIAL='|',LENGTH=01,ATTRB=(PROT,NORM),    X
+               COLOR=RED
+         DFHMDF POS=(14,6),INITIAL='|',LENGTH=01,ATTRB=(PROT,NORM),    X
+               COLOR=RED
+         DFHMDF POS=(15,6),INITIAL='|',LENGTH=01,ATTRB=(PROT,NORM),    X
+               COLOR=RED
+*********************************************************************
+         DFHMDF POS=(10,10),LENGTH=08,ATTRB=PROT,                      X
+               INITIAL='DOC ID ',COLOR=YELLOW
+LOGID    DFHMDF POS=(10,19),LENGTH=05,ATTRB=(UNPROT,IC),               X
+               INITIAL='_____',HILIGHT=UNDERLINE,COLOR=BLUE
+         DFHMDF POS=(10,25),LENGTH=01,ATTRB=ASKIP
+*********************************************************************
+         DFHMDF POS=(11,10),LENGTH=08,ATTRB=PROT,COLOR=YELLOW,         X
+               INITIAL='PASSWORD'
+PSWRD    DFHMDF POS=(11,19),LENGTH=06,ATTRB=(UNPROT,NORM),             X
+               INITIAL='______',HILIGHT=UNDERLINE,COLOR=BLUE
+         DFHMDF POS=(11,26),LENGTH=01,ATTRB=PROT
+*********************************************************************
+         DFHMDF POS=(13,15),INITIAL='LOGIN',LENGTH=05,                 X
+               ATTRB=(PROT,BRT),COLOR=RED,HILIGHT=REVERSE
+         DFHMDF POS=(13,21),INITIAL=' ',LENGTH=01,ATTRB=PROT
+*********************************************************************
+MSG      DFHMDF POS=(20,02),LENGTH=67,ATTRB=(PROT,FSET),COLOR=YELLOW
+*********************************************************************
+         DFHMDF POS=(23,20),                                           X
+               INITIAL='F1=LOGIN  F2=RESET  F3=EXIT  F8=FORGOT',       X
+               LENGTH=38,ATTRB=(PROT,NORM),COLOR=BLUE
+**********************************************************************
+         DFHMSD TYPE=FINAL
+         END
+

@@ -1,0 +1,36 @@
+B33MPS6  DFHMSD TYPE=&SYSPARM,                                         X
+               LANG=COBOL,                                             X
+               MODE=INOUT,                                             X
+               MAPATTS=(COLOR,HILIGHT),                                X
+               CTRL=FREEKB,                                            X
+               STORAGE=AUTO,                                           X
+               TIOAPFX=YES
+***********************************************************************
+BOTMAP   DFHMDI SIZE=(24,80),                                          X
+               LINE=1,                                                 X
+               COLUMN=1
+***********************************************************************
+         DFHMDF POS=(02,25),INITIAL='THE VIRTUAL ASSISTANT',LENGTH=21, X
+               ATTRB=(PROT,BRT),COLOR=RED
+         DFHMDF POS=(04,60),INITIAL='DATE :',LENGTH=06,                X
+               ATTRB=(PROT,NORM)
+CDATE    DFHMDF POS=(04,68),INITIAL='XX/XX/XXXX',LENGTH=10,            X
+               ATTRB=(PROT,NORM),HILIGHT=BLINK
+         DFHMDF POS=(04,79),INITIAL=' ',LENGTH=1,ATTRB=PROT
+         DFHMDF POS=(05,60),INITIAL='TIME :',LENGTH=06,                X
+               ATTRB=(PROT,NORM)
+CTIME    DFHMDF POS=(05,68),INITIAL='XX-XX-XX',LENGTH=08,              X
+               ATTRB=(PROT,NORM),HILIGHT=BLINK
+***********************************************************************
+         DFHMDF POS=(10,05),INITIAL='GUEST   :',LENGTH=09,COLOR=RED,   X
+               ATTRB=(PROT,BRT)
+INPUT    DFHMDF POS=(10,15),INITIAL=' ',LENGTH=50,,COLOR=BLUE,         X
+               ATTRB=(UNPROT,IC,FSET)
+         DFHMDF POS=(12,05),INITIAL='JACKSON :',LENGTH=09,COLOR=RED,   X
+               ATTRB=(PROT,BRT)
+OUTPUT   DFHMDF POS=(12,15),INITIAL=' ',LENGTH=50,,COLOR=BLUE,         X
+               ATTRB=(PROT,NORM)
+***********************************************************************
+         DFHMSD TYPE=FINAL
+         END
+

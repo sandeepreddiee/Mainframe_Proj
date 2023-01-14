@@ -1,0 +1,65 @@
+         PRINT NOGEN
+B33MPS1  DFHMSD TYPE=&SYSPARM,MODE=INOUT,LANG=COBOL,                   X
+               TERM=ALL,STORAGE=AUTO,MAPATTS=(COLOR,HILIGHT),          X
+               DSATTS=(COLOR,HILIGHT),                                 X
+               CTRL=(FREEKB,FRSET),TIOAPFX=YES
+***********************************************************************
+MAP1     DFHMDI SIZE=(05,80),LINE=01,COLUMN=01
+         DFHMDF POS=(2,25),INITIAL='HORTIS HOSPITALS',                 X
+               LENGTH=16,ATTRB=(PROT,BRT),COLOR=RED
+         DFHMDF POS=(03,60),INITIAL='BROWSE|HELP|LOGIN',LENGTH=17,     X
+               ATTRB=(PROT,NORM)
+         DFHMDF POS=(04,02),INITIAL='HORDOC',LENGTH=06,                X
+               ATTRB=(PROT,NORM)
+         DFHMDF POS=(04,60),INITIAL='DATE :',LENGTH=06,                X
+               ATTRB=(PROT,NORM)
+CDATE    DFHMDF POS=(04,68),INITIAL='XX/XX/XXXX',LENGTH=10,            X
+               ATTRB=(PROT,NORM),HILIGHT=BLINK
+         DFHMDF POS=(04,79),INITIAL=' ',LENGTH=1,ATTRB=PROT
+         DFHMDF POS=(05,60),INITIAL='TIME :',LENGTH=06,                X
+               ATTRB=(PROT,NORM)
+CTIME    DFHMDF POS=(05,68),INITIAL='XX-XX-XX',LENGTH=08,              X
+               ATTRB=(PROT,NORM),HILIGHT=BLINK
+         DFHMDF POS=(05,79),INITIAL=' ',LENGTH=01,ATTRB=ASKIP
+**********************************************************************
+MAP2     DFHMDI SIZE=(14,80),LINE=01,COLUMN=01
+         DFHMDF POS=(09,02),INITIAL='FIND LOCAL DOCTORS AT EASE',      X
+               LENGTH=26,ATTRB=(PROT,NORM),COLOR=YELLOW
+         DFHMDF POS=(10,02),INITIAL='AT YOUR FINGERTIPS',LENGTH=18,    X
+               ATTRB=(PROT,BRT),COLOR=YELLOW
+         DFHMDF POS=(12,02),INITIAL='PROBLEM',LENGTH=07,               X
+               ATTRB=(PROT,BRT)
+         DFHMDF POS=(12,20),INITIAL='ZIP CODE',LENGTH=08,              X
+               ATTRB=(PROT,BRT)
+         DFHMDF POS=(12,38),INITIAL='DATE',LENGTH=04,                  X
+               ATTRB=(PROT,BRT)
+PRB      DFHMDF POS=(13,02),INITIAL='___________',LENGTH=11,           X
+               ATTRB=(IC,UNPROT,FSET)
+         DFHMDF POS=(13,14),INITIAL=' ',LENGTH=01,ATTRB=ASKIP
+ZIP      DFHMDF POS=(13,20),INITIAL='______',LENGTH=06,                X
+               ATTRB=(UNPROT,NUM,FSET)
+         DFHMDF POS=(13,27),INITIAL=' ',LENGTH=01,ATTRB=ASKIP
+RDATE    DFHMDF POS=(13,38),INITIAL='__________',LENGTH=10,            X
+               ATTRB=(UNPROT,NORM,FSET)
+         DFHMDF POS=(13,49),INITIAL=' ',LENGTH=01,ATTRB=PROT
+         DFHMDF POS=(13,54),INITIAL='RESET/SEARCH',LENGTH=12,          X
+               ATTRB=(PROT,BRT),COLOR=GREEN
+***********************************************************************
+MAP3     DFHMDI SIZE=(24,80),LINE=01,COLUMN=01,                        X
+               MAPATTS=(COLOR,PS,HILIGHT),                             X
+               DSATTS=(COLOR,PS,HILIGHT)
+         DFHMDF POS=(18,60),INITIAL='CONTACT US AT',LENGTH=13,         X
+               ATTRB=(PROT,BRT),COLOR=RED
+         DFHMDF POS=(19,60),INITIAL='SERVICE@HORTIS.COM',              X
+               LENGTH=19,ATTRB=(PROT,NORM),HILIGHT=BLINK
+         DFHMDF POS=(20,60),INITIAL='855-962-3621',LENGTH=12,          X
+               ATTRB=(PROT,NORM)
+MSG      DFHMDF POS=(21,02),INITIAL=' ',LENGTH=70,ATTRB=(PROT,BRT),    X
+               COLOR=RED
+         DFHMDF POS=(23,10),                                           X
+               INITIAL='F1=ENTER F3=EXIT F6=RESET F8=BROWSE',          X
+               LENGTH=35,ATTRB=(PROT,NORM),COLOR=BLUE
+***********************************************************************
+         DFHMSD TYPE=FINAL
+         END
+

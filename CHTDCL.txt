@@ -1,0 +1,27 @@
+      ******************************************************************
+      * DCLGEN TABLE(CHATBOT_TABLE)                                    *
+      *        LIBRARY(BETA33.DCLGEN.COBOL(CHTDCL))                    *
+      *        LANGUAGE(COBOL)                                         *
+      *        QUOTE                                                   *
+      * ... IS THE DCLGEN COMMAND THAT MADE THE FOLLOWING STATEMENTS   *
+      ******************************************************************
+           EXEC SQL DECLARE CHATBOT_TABLE TABLE
+           ( C_PROBLEM                      CHAR(11) NOT NULL,
+             C_DOCTOR                       CHAR(12) NOT NULL,
+             C_TABLET1                      CHAR(10) NOT NULL,
+             C_TABLET2                      CHAR(10) NOT NULL,
+             C_TIMINGS                      CHAR(20) NOT NULL
+           ) END-EXEC.
+      ******************************************************************
+      * COBOL DECLARATION FOR TABLE CHATBOT_TABLE                      *
+      ******************************************************************
+       01  DCLCHATBOT-TABLE.
+           10 HV-C-PROBLEM            PIC X(11).
+           10 HV-C-DOCTOR             PIC X(12).
+           10 HV-C-TABLET1            PIC X(10).
+           10 HV-C-TABLET2            PIC X(10).
+           10 HV-C-TIMINGS            PIC X(20).
+      ******************************************************************
+      * THE NUMBER OF COLUMNS DESCRIBED BY THIS DECLARATION IS 5       *
+      ******************************************************************
+

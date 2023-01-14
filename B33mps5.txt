@@ -1,0 +1,45 @@
+B33MPS5  DFHMSD TYPE=&SYSPARM,MODE=INOUT,CTRL=FREEKB,                  X
+               LANG=COBOL,TIOAPFX=YES,                                 X
+               DSATTS=(COLOR,HILIGHT),                                 X
+               MAPATTS=(COLOR,HILIGHT),                                X
+               STORAGE=AUTO
+***********************************************************************
+DOCPTL   DFHMDI SIZE=(24,80)
+         DFHMDF POS=(02,29),LENGTH=17,ATTRB=PROT,                      X
+               INITIAL='HORTIS HOSPITAL'
+         DFHMDF POS=(05,02),LENGTH=06,ATTRB=(PROT,NORM),               X
+               INITIAL='HORDOC',COLOR=BLUE
+***********************************************************************
+         DFHMDF POS=(08,02),INITIAL='DOCTOR-ID  :',LENGTH=12,          X
+               ATTRB=(PROT,BRT),COLOR=RED
+DOCTID   DFHMDF POS=(08,16),INITIAL=' ',LENGTH=05,COLOR=YELLOW,        X
+               ATTRB=(PROT,NORM)
+         DFHMDF POS=(10,02),INITIAL='DOCTOR NAME:',LENGTH=12,          X
+               ATTRB=(PROT,BRT),COLOR=RED
+DOCTNM   DFHMDF POS=(10,16),INITIAL=' ',LENGTH=12,COLOR=YELLOW,        X
+               ATTRB=(PROT,NORM)
+***********************************************************************
+         DFHMDF POS=(12,02),INITIAL='PATIENT NAME',LENGTH=12,          X
+               ATTRB=(PROT,NORM),COLOR=RED
+         DFHMDF POS=(12,18),INITIAL='PATIENT-MOB-NO',LENGTH=14,        X
+               ATTRB=(PROT,NORM),COLOR=RED
+         DFHMDF POS=(12,35),INITIAL='PROBLEM    ',LENGTH=11,           X
+               ATTRB=(PROT,NORM),COLOR=RED
+         DFHMDF POS=(12,49),INITIAL='BOOKED DATE',LENGTH=11,           X
+               ATTRB=(PROT,NORM),COLOR=RED
+         DFHMDF POS=(12,63),INITIAL='BOOKED SLOT',LENGTH=11,           X
+               ATTRB=(PROT,NORM),COLOR=RED
+***********************************************************************
+PREC     DFHMDF POS=(14,02),INITIAL=' ',LENGTH=79,COLOR=YELLOW,        X
+               ATTRB=(PROT,NORM),OCCURS=5
+***********************************************************************
+MSG      DFHMDF POS=(21,02),INITIAL=' ',LENGTH=50,COLOR=RED,           X
+               ATTRB=(PROT,NORM)
+***********************************************************************
+         DFHMDF POS=(22,05),                                           X
+               INITIAL='DFHPF3=LOGOUT',LENGTH=13,ATTRB=(PROT,NORM),    X
+               COLOR=GREEN
+***********************************************************************
+         DFHMSD TYPE=FINAL
+         END
+
